@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0
+pragma solidity ^0.8.0;
 
 contract Incidences {
     struct Incidence {
@@ -12,6 +12,8 @@ contract Incidences {
         string userReceiver;
         string groupReceiver;
     }
+
+    mapping (uint => Incidence) public incidences;
 
     constructor() {
         
