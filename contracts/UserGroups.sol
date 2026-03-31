@@ -7,6 +7,8 @@ contract Groups {
         string description;
     }
 
+    uint public groupCount;
+
     mapping (uint => Group) public groups;
 
     constructor() {

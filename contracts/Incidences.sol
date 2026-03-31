@@ -12,6 +12,8 @@ contract Incidences {
         string userReceiver;
         string groupReceiver;
     }
+    
+    uint public incidenceCount;
 
     mapping (uint => Incidence) public incidences;
 

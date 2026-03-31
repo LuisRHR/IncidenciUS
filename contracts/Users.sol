@@ -33,6 +33,37 @@ contract Users {
         userNameToUid[userName] = uid;
         emailToUid[email] = uid;
     }
+
+    function login() public view returns (User memory) {
+        uint uid = walletToUid[msg.sender];
+        require(uid != 0, "Usuario no registrado");
+        return users[uid];
+    }
+
+    function giveUserInfo() public view returns (User memory) {
+        uint uid = walletToUid[msg.sender];
+        require(uid != 0, "Usuario no registrado");
+        return users[uid];
+    }
+
+    function giveUserAdminStatus() public {
+        uint uid = walletToUid[msg.sender];
+        require(uid != 0, "Usuario no registrado");
+        users[uid].condition = userCondition.ADMINISTRADOR;
+    }
+
+    function deleteUser() public {
+        uint uid = walletToUid[msg.sender];
+        require(uid != 0, "Usuario no registrado");
+        
+        // Eliminamos el usuario de los mappings
+        delete walletToUid[msg.sender];
+        delete userNameToUid[users[uid].userName];
+        delete emailToUid[users[uid].email]; // Asumiendo que el email es el mismo que el nombre de usuario
+        
+        // Eliminamos el usuario del mapping principal
+        delete users[uid];
+    }
     
     constructor() {
         

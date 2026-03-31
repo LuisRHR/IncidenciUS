@@ -20,7 +20,7 @@ contract Reports {
         string email;
     }
 
-    uint public contador;
+    uint public reportCount;
 
     mapping(uint => Report) public reports;
     mapping(uint => BugReport) public bugReports;
