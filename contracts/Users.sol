@@ -59,8 +59,7 @@ contract Users {
         // Eliminamos el usuario de los mappings
         delete walletToUid[msg.sender];
         delete userNameToUid[users[uid].userName];
-        delete emailToUid[users[uid].email]; // Asumiendo que el email es el mismo que el nombre de usuario
-        
+        delete emailToUid[users[uid].email];
         // Eliminamos el usuario del mapping principal
         delete users[uid];
     }
