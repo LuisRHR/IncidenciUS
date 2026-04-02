@@ -128,12 +128,17 @@ contract Groups {
     function deleteGroup() public {
         uint groupId = walletToAdminGroupId[msg.sender];
         require(groupId != 0, "No eres administrador de ningún grupo");
-        // TO-DO: Esta función debe de eliminar todos los mapping de todos los usuarios del grupo, así como el grupo en completo
+
+        // En los siguientes pasos borramos de los grupos toda la relación de wallet a grupo Id asi como con el administrador, nombre de grupo y posteriormente el grupo en sí
+        for (uint i = 0; i < groups[groupId].members.length; i++) {
+            uint userId = groups[groupId].members[i];
+            address userWallet = users[userId].wallet;
+            delete walletToGroupId[userWallet];
+        }
+        delete groupNameToId[groups[groupId].groupName];
+        delete walletToAdminGroupId[msg.sender];
+        delete groups[groupId];
     }
-
-
-
-
 
     constructor() {
         
