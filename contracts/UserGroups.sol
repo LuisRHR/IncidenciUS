@@ -118,7 +118,7 @@ contract Groups {
                 break;
             }
         }
-        // Si el usuario eliminado es el administrador, se asigna el miembro más antiguo (primero del array) como nuevo administrador
+        // Si el usuario eliminado es el administrador, se asigna al primero del array como nuevo administrador
         if (groups[groupId].admin == userId) {
             groups[groupId].admin = members.length > 0 ? members[0] : 0; // Si no hay miembros, el grupo queda sin administrador
         }
