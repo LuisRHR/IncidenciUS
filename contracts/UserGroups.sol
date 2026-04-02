@@ -77,7 +77,6 @@ contract Groups {
     function userJoined( string memory groupName) public {
         // Realizamos las verificaciones para asegurarnos de que un usuario ha sido invitado y no sea miembro de otro grupo
         require(walletToGroupId[msg.sender] == 0, "Ya eres miembro de un grupo");
-
         uint groupId = groupNameToId[groupName];
         uint userId = walletToUid[msg.sender];
         require(isInvited(groupId, userId), "No has sido invitado a este grupo"); 
@@ -102,9 +101,8 @@ contract Groups {
 
 
     function deleteUserFromGroup(string memory userName) public {
-        uint groupID = walletToAdminGroupId[msg.sender];
-        require(groupID != 0, "No eres administrador de ningún grupo");
-
+        uint groupId = walletToAdminGroupId[msg.sender];
+        require(groupId != 0, "No eres administrador de ningún grupo");
         uint userId = userNameToUid[userName];
         require(userId != 0, "Usuario a eliminar no registrado");
 
@@ -113,15 +111,27 @@ contract Groups {
             if (members[i] == userId) {
                 members[i] = members[members.length - 1];
                 members.pop();
-                walletToGroupId[msg.sender] = 0; 
+                // Extraemos la wallet del usuario eliminado 
+                address userWallet = users[userId].wallet;
+                // Eliminamos el grupo del mapping walletToGroupId del usuario eliminado
+                delete walletToGroupId[userWallet];
                 break;
             }
         }
-
         // Si el usuario eliminado es el administrador, se asigna el miembro más antiguo (primero del array) como nuevo administrador
+        if (groups[groupId].admin == userId) {
+            groups[groupId].admin = members.length > 0 ? members[0] : 0; // Si no hay miembros, el grupo queda sin administrador
+        }
         
-¡
     }
+
+    function deleteGroup() public {
+        uint groupId = walletToAdminGroupId[msg.sender];
+        require(groupId != 0, "No eres administrador de ningún grupo");
+        // TO-DO: Esta función debe de eliminar todos los mapping de todos los usuarios del grupo, así como el grupo en completo
+    }
+
+
 
 
 
