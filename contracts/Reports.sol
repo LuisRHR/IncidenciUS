@@ -3,40 +3,73 @@ pragma solidity ^0.8.0;
 
 contract Reports {
 
-    enum Tipo { Bug, User }
+    // Para implementar correctamente la extensión de report a bugreport y userreport vamos a
+    // usar directamente dos structs separados ya que no hay herencia entre structs aunque
+    // comparten una estructura base
 
-    struct Report {
+    struct BugReport {
         uint id;
         string sender;
         string description;
-    }
-
-    struct BugReport {
         string title;
     }
 
     struct UserReport {
+        uint id;
+        string sender;
+        string description;
         string userName;
         string email;
     }
 
     uint public reportCount;
-
-    mapping(uint => Report) public reports;
     mapping(uint => BugReport) public bugReports;
     mapping(uint => UserReport) public userReports;
 
     function createBugReport(string memory sender, string memory description, string memory title) public {
-        contador++;
+        reportCount++;
 
-        reports[contador] = Report(contador, sender, description);
-        bugReports[contador] = BugReport(title);
+        bugReports[reportCount] = BugReport(reportCount, sender, description, title);
     }
 
     function createUserReport(string memory sender, string memory description, string memory userName, string memory email) public {
-        contador++;
+        reportCount++;
 
-        reports[contador] = Report(contador, sender, description);
-        userReports[contador] = UserReport(userName, email);
+        userReports[reportCount] = UserReport(reportCount, sender, description, userName, email);
+    }
+
+    function viewSortedBugReports(string memory reportType) public view returns (BugReport[] memory) {
+        BugReport[] memory result;
+        uint count = 0;
+
+        for (uint i = reportCount; i>0; i--) {
+            // Si existe un bugReport con ese id, lo añadimos al resultado
+            if (BugReports[i]!=0) { 
+                result[count] = bugReports[i];
+                count++;
+            }
+        }
+
+        return result;
+    }
+
+    function viewSortedUserReports(string memory reportType) public view returns (UserReport[] memory) {
+        UserReport[] memory result;
+        uint count = 0;
+
+        for (uint i = reportCount; i>0; i--) {
+            // Si existe un userReport con ese id, lo añadimos al resultado
+            if (userReports[i]!=0) { 
+                result[count] = userReports[i];
+                count++;
+            }
+        }
+
+        return result;
+    }
+
+
+    constructor() {
+        
     }
 }

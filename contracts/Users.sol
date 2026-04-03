@@ -63,6 +63,16 @@ contract Users {
         // Eliminamos el usuario del mapping principal
         delete users[uid];
     }
+
+    function blockUser(string memory userName) public {
+        uint uid = walletToUid[msg.sender];
+        require(users[uid].condition == userCondition.ADMINISTRADOR, "No tienes permisos para bloquear usuarios");
+        uint uidToBlock = userNameToUid[userName];
+        require(uidToBlock != 0, "Usuario a bloquear no registrado");
+
+        // No queremos eliminar al usuario, si no bloquearlo, para evitar que pueda volver a registrar esa wallet, de manera que quedará permanentemente bloqueado
+        users[uidToBlock].isBanned = true;
+    }
     
     constructor() {
         
