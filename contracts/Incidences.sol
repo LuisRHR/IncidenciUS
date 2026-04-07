@@ -36,7 +36,15 @@ contract Incidences {
         senderToIncidenceIds[userNameToUid[senderName]].push(incidenceCount);
     }
 
-    function letUserOrGroupViewIncidencesForThem(string memory date1, string memory date2) public view returns (Incidence[] memory) {
+    function userViewIndividualIncidences(string memory date1, string memory date2) public view returns (Incidence[] memory) {
+        Incidence[] memory result;
+        uint count = 0;
+        uint userId = walletToUid[msg.sender];
+
+        //TO-DO Implementar lógica para filtrar por fechas, así com mostrar incidencias tanto para usuarios como para grupos
+    }
+
+    function userViewGroupIncidences(string memory date1, string memory date2) public view returns (Incidence[] memory) {
         Incidence[] memory result;
         uint count = 0;
         uint userId = walletToUid[msg.sender];

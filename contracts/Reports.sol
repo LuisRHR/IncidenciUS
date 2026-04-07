@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "./Users.sol";
 
 contract Reports {
 
@@ -41,7 +42,7 @@ contract Reports {
     function viewSortedBugReports(string memory reportType) public view returns (BugReport[] memory) {
         BugReport[] memory result;
         uint count = 0;
-
+        require(users[walletToUid[msg.sender]].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
             // Si existe un bugReport con ese id, lo añadimos al resultado
             if (BugReports[i]!=0) { 
@@ -56,7 +57,7 @@ contract Reports {
     function viewSortedUserReports(string memory reportType) public view returns (UserReport[] memory) {
         UserReport[] memory result;
         uint count = 0;
-
+        require(users[walletToUid[msg.sender]].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
             // Si existe un userReport con ese id, lo añadimos al resultado
             if (userReports[i]!=0) { 

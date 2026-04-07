@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract Users {
-    enum userCondition {COMUN, ADMINISTRADOR};
+    enum userCondition {COMUN, ADMINISTRADOR_SISTEMA};
     struct User {
         uint uid;
         string userName;
@@ -49,7 +49,7 @@ contract Users {
     function giveUserAdminStatus() public {
         uint uid = walletToUid[msg.sender];
         require(uid != 0, "Usuario no registrado");
-        users[uid].condition = userCondition.ADMINISTRADOR;
+        users[uid].condition = userCondition.ADMINISTRADOR_SISTEMA;
     }
 
     function deleteUser() public {
@@ -66,7 +66,7 @@ contract Users {
 
     function blockUser(string memory userName) public {
         uint uid = walletToUid[msg.sender];
-        require(users[uid].condition == userCondition.ADMINISTRADOR, "No tienes permisos para bloquear usuarios");
+        require(users[uid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
         uint uidToBlock = userNameToUid[userName];
         require(uidToBlock != 0, "Usuario a bloquear no registrado");
 

@@ -106,7 +106,7 @@ contract Groups {
         uint userId = userNameToUid[userName];
         require(userId != 0, "Usuario a eliminar no registrado");
 
-        uint[] storage members = groups[groupID].members;
+        uint[] storage members = groups[groupId].members;
         for (uint i = 0; i < members.length; i++) {
             if (members[i] == userId) {
                 members[i] = members[members.length - 1];
