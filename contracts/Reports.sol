@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.28;
+
 import "./Users.sol";
 
 contract Reports {
@@ -24,6 +25,12 @@ contract Reports {
     }
 
     uint public reportCount;
+    Users public users;
+
+    constructor(address usersAddress) {
+        users = Users(usersAddress);
+    }
+
     mapping(uint => BugReport) public bugReports;
     mapping(uint => UserReport) public userReports;
 
@@ -39,13 +46,13 @@ contract Reports {
         userReports[reportCount] = UserReport(reportCount, sender, description, userName, email);
     }
 
-    function viewSortedBugReports(string memory reportType) public view returns (BugReport[] memory) {
+    function viewSortedBugReports() public view returns (BugReport[] memory) {
         BugReport[] memory result;
         uint count = 0;
-        require(users[walletToUid[msg.sender]].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
+        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
             // Si existe un bugReport con ese id, lo añadimos al resultado
-            if (BugReports[i]!=0) { 
+            if (bugReports[i].id!=0) { 
                 result[count] = bugReports[i];
                 count++;
             }
@@ -54,13 +61,13 @@ contract Reports {
         return result;
     }
 
-    function viewSortedUserReports(string memory reportType) public view returns (UserReport[] memory) {
+    function viewSortedUserReports() public view returns (UserReport[] memory) {
         UserReport[] memory result;
         uint count = 0;
-        require(users[walletToUid[msg.sender]].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
+        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
             // Si existe un userReport con ese id, lo añadimos al resultado
-            if (userReports[i]!=0) { 
+            if (userReports[i].id!=0) { 
                 result[count] = userReports[i];
                 count++;
             }
@@ -69,8 +76,4 @@ contract Reports {
         return result;
     }
 
-
-    constructor() {
-        
-    }
 }

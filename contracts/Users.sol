@@ -1,11 +1,12 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.28;
 
 contract Users {
-    enum userCondition {COMUN, ADMINISTRADOR_SISTEMA};
+    enum userCondition {COMUN, ADMINISTRADOR_SISTEMA}
     struct User {
         uint uid;
         string userName;
+        string email;
         address wallet;
         userCondition condition;
         bool isBanned;
@@ -28,7 +29,7 @@ contract Users {
         userCount++;
         uint uid = userCount;
         
-        users[uid] = User(uid, userName, msg.sender, userCondition.COMUN, false);
+        users[uid] = User(uid, userName, email, msg.sender, userCondition.COMUN, false);
         walletToUid[msg.sender] = uid;
         userNameToUid[userName] = uid;
         emailToUid[email] = uid;
@@ -72,6 +73,24 @@ contract Users {
 
         // No queremos eliminar al usuario, si no bloquearlo, para evitar que pueda volver a registrar esa wallet, de manera que quedará permanentemente bloqueado
         users[uidToBlock].isBanned = true;
+    }
+
+    function getUserById(uint uid) public view returns (User memory) {
+        return users[uid];
+    }
+
+    function getIdByWallet(address wallet) public view returns (uint) {
+        uint uid = walletToUid[wallet];
+        return uid;
+    }
+    function getIdByUserName(string memory userName) public view returns (uint) {
+        uint uid = userNameToUid[userName];
+        return uid;
+    }
+
+     function getIdByEmail(string memory email) public view returns (uint) {
+        uint uid = emailToUid[email];
+        return uid;
     }
     
     constructor() {

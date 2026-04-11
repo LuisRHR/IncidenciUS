@@ -1,0 +1,21 @@
+node_modules
+.env
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# Voy a ignorar toda la carpeta ignition, ya que en mi lugar lo hare en la carpeta scripts, pero como esta carpeta se encuentra en la raiz del proyecto, la ignoro completamente para evitar problemas de merge
+ignition/
+
+Lock.sol
+Lock.js 
+

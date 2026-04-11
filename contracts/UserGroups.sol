@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.28;
 
 import "./Users.sol";
 
@@ -14,10 +14,16 @@ contract Groups {
     }
 
     uint public groupCount;
+    Users public users;
+
+    // Creamos los grupos e instanciamos el contrato de usuarios para poder relacionar grupos y usuarios
+    constructor(address usersAddress) {
+        users = Users(usersAddress);
+    }
 
     mapping (uint => Group) public groups;
     mapping (string => uint) public groupNameToId;
-    mapping (address => uint) public walletToAdminGroupId;
+    mapping (address => uint) public walletAdminToGroupId;
     mapping (address => uint) public walletToGroupId;
     mapping (uint => uint[]) public userIdToInvitedGroupIds;
 
@@ -27,7 +33,7 @@ contract Groups {
         // Creamos un nuevo grupo tras la verificación anterior
         groupCount++;
         uint groupId = groupCount;
-        uint adminId = walletToUid[msg.sender];
+        uint adminId = users.getIdByWallet(msg.sender);
         // El usuario debería de haber iniciado sesión, pero se realiza esta verificación para asegurarnos de que el creador del grupo es un usuario registrado
         require(adminId != 0, "El creador del grupo no es un usuario registrado");
 
@@ -36,21 +42,21 @@ contract Groups {
         groups[groupId].members.push(adminId);
         groups[groupId].admin = adminId;
         groupNameToId[groupName] = groupId;
-        walletToAdminGroupId[msg.sender] = groupId;
+        walletAdminToGroupId[msg.sender] = groupId;
         walletToGroupId[msg.sender] = groupId;
     }
 
     function inviteUserToGroup(string memory userName) public {
-        require(walletToAdminGroupId[msg.sender] != 0, "No eres administrador de ningún grupo"); // Verificamos que el remitente es administrador de un grupo
+        require(walletAdminToGroupId[msg.sender] != 0, "No eres administrador de ningun grupo"); // Verificamos que el remitente es administrador de un grupo
 
-        uint groupId = walletToAdminGroupId[msg.sender];
-        uint userId = userNameToUid[userName];
+        uint groupId = walletAdminToGroupId[msg.sender];
+        uint userId = users.getIdByUserName(userName);
         require(userId != 0, "Usuario a invitar no registrado"); // Verificamos que el usuario a invitar está registrado
         require(!isMember(groupId, userId), "Usuario ya es miembro del grupo"); // Verificamos que el usuario no es ya miembro del grupo
         require(!isInvited(groupId, userId), "Usuario ya ha sido invitado al grupo"); // Verificamos que el usuario no ha sido ya invitado al grupo
 
         groups[groupId].invitedUsers.push(userId); // Añadimos al usuario a la lista de invitados del grupo
-        userIdToInvitatedGroupIds[userId].push(groupId); // Añadimos el grupo a la lista de grupos a los que el usuario ha sido invitado
+        userIdToInvitedGroupIds[userId].push(groupId); // Añadimos el grupo a la lista de grupos a los que el usuario ha sido invitado
     }
 
     // Funciones auxiliares para chequeo de membresía e invitación
@@ -78,13 +84,12 @@ contract Groups {
         // Realizamos las verificaciones para asegurarnos de que un usuario ha sido invitado y no sea miembro de otro grupo
         require(walletToGroupId[msg.sender] == 0, "Ya eres miembro de un grupo");
         uint groupId = groupNameToId[groupName];
-        uint userId = walletToUid[msg.sender];
+        uint userId = users.getIdByWallet(msg.sender);
         require(isInvited(groupId, userId), "No has sido invitado a este grupo"); 
 
         // Añadimos al usuario como miembro del grupo
         groups[groupId].members.push(userId);
         walletToGroupId[msg.sender] = groupId;
-+
         // Ahora nos aseguramos que el usuario se elimina de la lista de invitados de TODOS LOS GRUPOS a los que haya podido ser invitado:
         for (uint i = 0; i < userIdToInvitedGroupIds[userId].length; i++) {
             uint groupIds = userIdToInvitedGroupIds[userId][i];
@@ -101,9 +106,9 @@ contract Groups {
 
 
     function deleteUserFromGroup(string memory userName) public {
-        uint groupId = walletToAdminGroupId[msg.sender];
-        require(groupId != 0, "No eres administrador de ningún grupo");
-        uint userId = userNameToUid[userName];
+        uint groupId = walletAdminToGroupId[msg.sender];
+        require(groupId != 0, "No eres administrador de ningun grupo");
+        uint userId = users.getIdByUserName(userName);
         require(userId != 0, "Usuario a eliminar no registrado");
 
         uint[] storage members = groups[groupId].members;
@@ -112,7 +117,7 @@ contract Groups {
                 members[i] = members[members.length - 1];
                 members.pop();
                 // Extraemos la wallet del usuario eliminado 
-                address userWallet = users[userId].wallet;
+                address userWallet = users.getUserById(userId).wallet;
                 // Eliminamos el grupo del mapping walletToGroupId del usuario eliminado
                 delete walletToGroupId[userWallet];
                 break;
@@ -126,21 +131,38 @@ contract Groups {
     }
 
     function deleteGroup() public {
-        uint groupId = walletToAdminGroupId[msg.sender];
-        require(groupId != 0, "No eres administrador de ningún grupo");
+        uint groupId = walletAdminToGroupId[msg.sender];
+        require(groupId != 0, "No eres administrador de ningun grupo");
 
         // En los siguientes pasos borramos de los grupos toda la relación de wallet a grupo Id asi como con el administrador, nombre de grupo y posteriormente el grupo en sí
         for (uint i = 0; i < groups[groupId].members.length; i++) {
             uint userId = groups[groupId].members[i];
-            address userWallet = users[userId].wallet;
+            address userWallet = users.getUserById(userId).wallet;
             delete walletToGroupId[userWallet];
         }
         delete groupNameToId[groups[groupId].groupName];
-        delete walletToAdminGroupId[msg.sender];
+        delete walletAdminToGroupId[msg.sender];
         delete groups[groupId];
     }
 
-    constructor() {
-        
+    function getGroupById(uint groupId) public view returns (Group memory) {
+        return groups[groupId];
     }
+
+    function getIdByGroupName(string memory groupName) public view returns (uint) {
+        return groupNameToId[groupName];
+    }
+
+    function getGroupIdByAdminWallet(address adminWallet) public view returns (uint) {
+        return walletAdminToGroupId[adminWallet];
+    }
+
+    function getGroupIdByUserWallet(address userWallet) public view returns (uint) {
+        return walletToGroupId[userWallet];
+    }
+    
+    function getInvitedGroupIdsByUserId(uint userId) public view returns (uint[] memory) {
+        return userIdToInvitedGroupIds[userId];
+    }
+
 }
