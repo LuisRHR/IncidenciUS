@@ -13,8 +13,8 @@ node_modules
 /coverage
 /coverage.json
 
-# Voy a ignorar toda la carpeta ignition, ya que en mi lugar lo hare en la carpeta scripts, pero como esta carpeta se encuentra en la raiz del proyecto, la ignoro completamente para evitar problemas de merge
-ignition/
+# Ignore ignition deployment 
+ignition/deployments/chain-31337
 
 Lock.sol
 Lock.js 

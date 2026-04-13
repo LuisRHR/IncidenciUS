@@ -26,5 +26,17 @@ contract AdminRequests {
         walletToRequestId[userWallet] = requestCount;   
     }
 
-     // TO-DO Función para que el admin pueda ver las solicitudes
+     function viewRequests() public view returns (AdminRequest[] memory) {
+         AdminRequest[] memory requests;
+            for (uint i=1; i<=requestCount; i++) {
+                requests[i-1] = adminRequests[i];
+            }
+         return requests;
+     }
+
+     function removeRequest(uint requestId) public {
+        // Esta función solo se usará exclusivamente cuando se haya usado primero 
+        // la función viewRequests y tras elegir si el usuario es apto o no para ser admin
+         delete adminRequests[requestId];
+     }
 }

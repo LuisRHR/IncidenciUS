@@ -49,28 +49,24 @@ contract Incidences {
     }
 
     function userViewIndividualIncidences() public view returns (Incidence[] memory) {
-        uint userId = users.getIdByWallet(msg.sender);
-        uint[] memory result;
+        uint userId = users.getIdByWallet(msg.sender); 
         Incidence[] memory resultIncidences;
         require(userRToIncidenceIds[userId].length > 0, "No tienes incidencias asignadas");
-        result = userRToIncidenceIds[userId];
-        for (uint i=0; i<result.length; i++) {
-            resultIncidences[i] = incidences[result[i]];
+        uint[] memory result = userRToIncidenceIds[userId];
+        for (uint i=1; i<result.length; i++) {
+            resultIncidences[i-1] = incidences[result[i-1]];
         }
         return resultIncidences;
     }
 
     function userViewGroupIncidences() public view returns (Incidence[] memory) {
-        uint userId = users.getIdByWallet(msg.sender);
+        require(groups.getGroupIdByUserWallet(msg.sender) != 0, "No eres miembro de ningun grupo"); 
         uint groupId = groups.getGroupIdByUserWallet(msg.sender);
-        uint[] memory result;
-        Incidence[] memory resultIncidences;
-        require(groupRToIncidenceIds[groupId].length > 0, "No tienes incidencias asignadas");
-        address userWallet = users.getUserById(userId).wallet;
-        require(groups.getGroupIdByUserWallet(userWallet) != 0, "No eres miembro de ningun grupo");  
-        result = groupRToIncidenceIds[groupId];
-        for (uint i=0; i<result.length; i++) {
-            resultIncidences[i] = incidences[result[i]];
+        Incidence[] memory resultIncidences = new Incidence[](groupRToIncidenceIds[groupId].length);
+        require(groupRToIncidenceIds[groupId].length > 0, "No tienes incidencias asignadas"); 
+        uint[] memory result = groupRToIncidenceIds[groupId];
+        for (uint i=1; i<result.length; i++) {
+            resultIncidences[i-1] = incidences[result[i]];
         }
         return resultIncidences;
     }

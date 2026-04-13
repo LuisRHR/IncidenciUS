@@ -47,7 +47,7 @@ contract Reports {
     }
 
     function viewSortedBugReports() public view returns (BugReport[] memory) {
-        BugReport[] memory result;
+        BugReport[] memory result = new BugReport[](reportCount);
         uint count = 0;
         require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
@@ -62,7 +62,7 @@ contract Reports {
     }
 
     function viewSortedUserReports() public view returns (UserReport[] memory) {
-        UserReport[] memory result;
+        UserReport[] memory result = new UserReport[](reportCount);
         uint count = 0;
         require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
         for (uint i = reportCount; i>0; i--) {
