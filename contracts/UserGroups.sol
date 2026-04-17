@@ -46,11 +46,11 @@ contract Groups {
         walletToGroupId[msg.sender] = groupId;
     }
 
-    function inviteUserToGroup(string memory userName) public {
+    function inviteUserToGroup(string memory userNameHashed) public {
         require(walletAdminToGroupId[msg.sender] != 0, "No eres administrador de ningun grupo"); // Verificamos que el remitente es administrador de un grupo
 
         uint groupId = walletAdminToGroupId[msg.sender];
-        uint userId = users.getIdByUserName(userName);
+        uint userId = users.getIdByUserName(userNameHashed);
         require(userId != 0, "Usuario a invitar no registrado"); // Verificamos que el usuario a invitar está registrado
         require(!isMember(groupId, userId), "Usuario ya es miembro del grupo"); // Verificamos que el usuario no es ya miembro del grupo
         require(!isInvited(groupId, userId), "Usuario ya ha sido invitado al grupo"); // Verificamos que el usuario no ha sido ya invitado al grupo
@@ -105,10 +105,10 @@ contract Groups {
     }
 
 
-    function deleteUserFromGroup(string memory userName) public {
+    function deleteUserFromGroup(string memory userNameHashed) public {
         uint groupId = walletAdminToGroupId[msg.sender];
         require(groupId != 0, "No eres administrador de ningun grupo");
-        uint userId = users.getIdByUserName(userName);
+        uint userId = users.getIdByUserName(userNameHashed);
         require(userId != 0, "Usuario a eliminar no registrado");
 
         uint[] storage members = groups[groupId].members;

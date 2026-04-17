@@ -8,13 +8,16 @@ contract Incidences {
     enum priority {BAJA, MEDIA, ALTA}
     struct Incidence {
         uint id;
-        string title;
-        string description;
+        string titleHash;
+        string descriptionHash;
         string date;
         priority priorityLevel;
-        string senderName;
-        string userReceiver;
-        string groupReceiver;
+        string senderNameHash;
+        string userReceiverHash;
+        string groupReceiverHash;
+
+        // CID de IPFS con toda la información privada de la incidencia 
+        string privateDataCID;
     }
     
     uint public incidenceCount;
@@ -32,19 +35,19 @@ contract Incidences {
     mapping (uint => uint[]) public userRToIncidenceIds;
     mapping (uint => uint[]) public groupRToIncidenceIds;
 
-    function registerIncidence(string memory title, string memory description, string memory date, priority priorityLevel, string memory senderName, string memory userReceiver, string memory groupReceiver) public {
+    function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, priority priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiverHash, string memory privateDataCID) public {
         // En la lógica de alto nivel debe de verificarse que el checkbox que se marque si el grupo es el destinatario, mande como senderName "" y que en caso contrario mande groupReceiver como "", así como que el usuario o grupo destinatario que sea en cada caso
         incidenceCount++;
-        incidences[incidenceCount] = Incidence(incidenceCount, title, description, date, priorityLevel, senderName, userReceiver, groupReceiver);
-        if (keccak256(abi.encodePacked(userReceiver)) != keccak256(abi.encodePacked(""))) {
-            uint userId = users.getIdByUserName(userReceiver);
+        incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID);
+        if (keccak256(abi.encodePacked(userReceiverHash)) != keccak256(abi.encodePacked(""))) {
+            uint userId = users.getIdByUserName(senderNameHash);
             userRToIncidenceIds[userId].push(incidenceCount);
         }
-        else if (keccak256(abi.encodePacked(groupReceiver)) != keccak256(abi.encodePacked(""))) {
-            uint groupId = groups.getIdByGroupName(groupReceiver);
+        else if (keccak256(abi.encodePacked(groupReceiverHash)) != keccak256(abi.encodePacked(""))) {
+            uint groupId = groups.getIdByGroupName(groupReceiverHash);
             groupRToIncidenceIds[groupId].push(incidenceCount);
         }
-        uint senderId = users.getIdByUserName(senderName);
+        uint senderId = users.getIdByUserName(senderNameHash);
         senderToIncidenceIds[senderId].push(incidenceCount);
     }
 

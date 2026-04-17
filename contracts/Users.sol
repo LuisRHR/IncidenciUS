@@ -5,11 +5,13 @@ contract Users {
     enum userCondition {COMUN, ADMINISTRADOR_SISTEMA}
     struct User {
         uint uid;
-        string userName;
-        string email;
+        string userNameHash;
+        string emailHash;
         address wallet;
         userCondition condition;
         bool isBanned;
+        // CID de IPFS
+        string userInfoCID;
     }
 
     uint public userCount;
@@ -19,20 +21,20 @@ contract Users {
     mapping(string => uint) public userNameToUid;
     mapping(string => uint) public emailToUid;
 
-    function registerUser(string memory userName, string memory email) public {
+    function registerUser(string memory userNameHashed, string memory emailHashed, string memory userInfoCID) public {
         //Restricción para evitar usuarios ya registrados
         require(walletToUid[msg.sender] == 0, "Usuario ya registrado con esta wallet");
-        require(userNameToUid[userName] == 0, "Usuario ya registrado con este nombre");
-        require(emailToUid[email] == 0, "Usuario ya registrado con este correo");
+        require(userNameToUid[userNameHashed] == 0, "Usuario ya registrado con este nombre");
+        require(emailToUid[emailHashed] == 0, "Usuario ya registrado con este correo");
         
         //Creamos el nuevo usuario
         userCount++;
         uint uid = userCount;
         
-        users[uid] = User(uid, userName, email, msg.sender, userCondition.COMUN, false);
+        users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID);
         walletToUid[msg.sender] = uid;
-        userNameToUid[userName] = uid;
-        emailToUid[email] = uid;
+        userNameToUid[userNameHashed] = uid;
+        emailToUid[emailHashed] = uid;
     }
 
     function login() public view returns (User memory) {
@@ -59,16 +61,16 @@ contract Users {
         
         // Eliminamos el usuario de los mappings
         delete walletToUid[msg.sender];
-        delete userNameToUid[users[uid].userName];
-        delete emailToUid[users[uid].email];
+        delete userNameToUid[users[uid].userNameHash];
+        delete emailToUid[users[uid].emailHash];
         // Eliminamos el usuario del mapping principal
         delete users[uid];
     }
 
-    function blockUser(string memory userName) public {
+    function blockUser(string memory userNameHashed) public {
         uint uid = walletToUid[msg.sender];
         require(users[uid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
-        uint uidToBlock = userNameToUid[userName];
+        uint uidToBlock = userNameToUid[userNameHashed];
         require(uidToBlock != 0, "Usuario a bloquear no registrado");
 
         // No queremos eliminar al usuario, si no bloquearlo, para evitar que pueda volver a registrar esa wallet, de manera que quedará permanentemente bloqueado
@@ -83,13 +85,13 @@ contract Users {
         uint uid = walletToUid[wallet];
         return uid;
     }
-    function getIdByUserName(string memory userName) public view returns (uint) {
-        uint uid = userNameToUid[userName];
+    function getIdByUserName(string memory userNameHashed) public view returns (uint) {
+        uint uid = userNameToUid[userNameHashed];
         return uid;
     }
 
-     function getIdByEmail(string memory email) public view returns (uint) {
-        uint uid = emailToUid[email];
+     function getIdByEmail(string memory emailHashed) public view returns (uint) {
+        uint uid = emailToUid[emailHashed];
         return uid;
     }
     

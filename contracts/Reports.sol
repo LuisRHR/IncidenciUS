@@ -11,17 +11,25 @@ contract Reports {
 
     struct BugReport {
         uint id;
-        string sender;
-        string description;
-        string title;
+        string senderHash;
+        string descriptionHash;
+        string hashProofs;
+        string titleHash;
+
+        // CID de IPFS para almacenar las pruebas de la denuncia, como fotos o videos, junto con el resto de la información.
+        string userReportCID;
     }
 
     struct UserReport {
         uint id;
-        string sender;
-        string description;
-        string userName;
-        string email;
+        string senderHash;
+        string descriptionHash;
+        string hashProofs;
+        string userNameHash;
+        string emailHash;
+
+        // CID de IPFS para almacenar las pruebas de la denuncia, como fotos o videos, junto con el resto de la información.
+        string userReportCID;
     }
 
     uint public reportCount;
@@ -34,16 +42,16 @@ contract Reports {
     mapping(uint => BugReport) public bugReports;
     mapping(uint => UserReport) public userReports;
 
-    function createBugReport(string memory sender, string memory description, string memory title) public {
+    function createBugReport(string memory senderHashed, string memory descriptionHashed, string memory titleHashed, string memory hashProofs, string memory userReportCID) public {
         reportCount++;
 
-        bugReports[reportCount] = BugReport(reportCount, sender, description, title);
+        bugReports[reportCount] = BugReport(reportCount, senderHashed, descriptionHashed, hashProofs, titleHashed, userReportCID);
     }
 
-    function createUserReport(string memory sender, string memory description, string memory userName, string memory email) public {
+    function createUserReport(string memory senderHashed, string memory descriptionHashed, string memory userNameHashed, string memory emailHashed, string memory hashProofs, string memory userReportCID) public {
         reportCount++;
 
-        userReports[reportCount] = UserReport(reportCount, sender, description, userName, email);
+        userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
     }
 
     function viewSortedBugReports() public view returns (BugReport[] memory) {
