@@ -83,5 +83,4 @@ contract Reports {
 
         return result;
     }
-
 }
