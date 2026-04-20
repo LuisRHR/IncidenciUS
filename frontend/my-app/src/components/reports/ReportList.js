@@ -1,7 +1,7 @@
 import React from 'react';
-import { Table, Badge, Card, Container } from 'react-bootstrap';
+import { Table, Badge, Card, Container, Button } from 'react-bootstrap';
 
-const ReportList = ({ reports }) => {
+const ReportList = ({ reports, onBlockUser, onDecline }) => {
     return (
         <Container className="py-4">
             <h3 className="fw-bold mb-4">Registro de Reportes de Sistema</h3>
@@ -14,11 +14,12 @@ const ReportList = ({ reports }) => {
                             <th>Título / Sujeto</th>
                             <th>Descripción</th>
                             <th>Pruebas</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {reports.length === 0 ? (
-                            <tr><td colSpan="5" className="text-center py-4 text-muted">No hay reportes.</td></tr>
+                            <tr><td colSpan="6" className="text-center py-4 text-muted">No hay reportes.</td></tr>
                         ) : (
                             reports.map((rep, idx) => (
                                 <tr key={idx}>
@@ -31,6 +32,24 @@ const ReportList = ({ reports }) => {
                                     <td>{rep.type === 'BUG_REPORT' ? rep.title : `${rep.userName} (${rep.email})`}</td>
                                     <td>{rep.description}</td>
                                     <td><small className="text-muted">{rep.proofs}</small></td>
+                                    <td>
+                                        <div className="d-flex gap-2">
+                                            <Button 
+                                                variant="success" 
+                                                size="sm" 
+                                                onClick={() => rep.type === 'USER_REPORT' ? onBlockUser(rep.id, rep.userName) : onDecline(rep.id)}
+                                            >
+                                                Aceptar
+                                            </Button>
+                                            <Button 
+                                                variant="outline-secondary" 
+                                                size="sm" 
+                                                onClick={() => onDecline(rep.id)}
+                                            >
+                                                Declinar
+                                            </Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         )}

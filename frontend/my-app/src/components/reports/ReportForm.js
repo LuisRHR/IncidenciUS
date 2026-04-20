@@ -5,7 +5,7 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
     const [reportType, setReportType] = useState('bug');
     const [title, setTitle] = useState('');
     const [targetUserName, setTargetUserName] = useState('');
-    const [targetEmail, setTargetEmail] = useState('');
+
     const [description, setDescription] = useState('');
     const [proofs, setProofs] = useState('');
 
@@ -13,13 +13,12 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
         e.preventDefault();
         
         const reportData = {
-            sender: user ? user.userName : "Anónimo",
+            sender: user.userName,
             description,
             proofs,
             type: reportType === 'bug' ? 'BUG_REPORT' : 'USER_REPORT',
             title: reportType === 'bug' ? title : '',
-            userName: reportType === 'user' ? targetUserName : '',
-            email: reportType === 'user' ? targetEmail : ''
+            userName: reportType === 'user' ? targetUserName : ''
         };
 
         onSubmit(reportData);
@@ -42,16 +41,10 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
                         <Form.Control type="text" placeholder="Resumen del error..." value={title} onChange={(e) => setTitle(e.target.value)} required />
                     </Form.Group>
                 ) : (
-                    <>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold small">Usuario Reportado</Form.Label>
-                            <Form.Control type="text" placeholder="Nombre..." value={targetUserName} onChange={(e) => setTargetUserName(e.target.value)} required />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold small">Correo Electrónico</Form.Label>
-                            <Form.Control type="email" placeholder="email@ejemplo.com" value={targetEmail} onChange={(e) => setTargetEmail(e.target.value)} required />
-                        </Form.Group>
-                    </>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold small">Usuario Reportado</Form.Label>
+                        <Form.Control type="text" placeholder="Nombre..." value={targetUserName} onChange={(e) => setTargetUserName(e.target.value)} required />
+                    </Form.Group>
                 )}
 
                 <Form.Group className="mb-3">

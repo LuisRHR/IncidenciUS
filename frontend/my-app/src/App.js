@@ -26,26 +26,28 @@ function App() {
   const [allReports, setAllReports] = useState([]);
   const [allAdminRequests, setAllAdminRequests] = useState([]);
 
-  // Estado de usuarios simulado 
+  // Estado de usuarios simulado, solo se usan las propiedades utiles en este caso, group además no es una propiedad, se cambiara posteriormente
   // tanto esto, como indicendes, como reportes, serán directamente redirigidos a la blockchain con los fetches correspondientes, pero para simular la experiencia de usuario, se mantienen en estado local
   const [allUsers, setAllUsers] = useState([
-    { wallet: "0x1234567890abcdef1234567890abcdef12345678", userName: "User_Soporte_1", group: "LRHR" },
-    { wallet: "0xabcdef1234567890abcdef1234567890abcdef12", userName: "User_Soporte_2", group: "LRHR" },
-    { wallet: "0x9876543210fedcba9876543210fedcba98765432", userName: "Analista_Externo", group: "AMRQ" },
+    { wallet: "0x1234567890abcdef1234567890abcdef12345678", userName: "User_Soporte_1", group: "LRHR", isBanned: false },
+    { wallet: "0xabcdef1234567890abcdef1234567890abcdef12", userName: "User_Soporte_2", group: "LRHR", isBanned: false },
+    { wallet: "0x9876543210fedcba9876543210fedcba98765432", userName: "Analista_Externo", group: "AMRQ", isBanned: false },
   ]);
 
   // Autenticación y Registro
 
   const handleLoginAttempt = (address) => {
+    const checkBanned = allUsers.find(u => u.wallet.toLowerCase() === address.toLowerCase());
+    if (checkBanned && checkBanned.isBanned) {
+      alert("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por un administrador.");
+      return;
+    }
+
     setWallet(address);
     const SYSTEM_ADMIN_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
     if (address.toLowerCase() === SYSTEM_ADMIN_WALLET.toLowerCase()) {
-      setUser({ 
-        wallet: address, 
-        userName: "Admin_Principal", 
-        role: 'Admin de Sistema' 
-      });
+      setUser({ wallet: address, userName: "Admin_Principal", role: 'Admin de Sistema' });
       setUserGroup(null); 
       setView('dashboard');
     } else {
@@ -61,20 +63,48 @@ function App() {
 
   const handleRegisterSuccess = (userData) => {
     setUser(userData);
+    setAllUsers([...allUsers, { ...userData, isBanned: false }]);
     setUserGroup(null); 
     setView('dashboard');
   };
 
   const handleDeleteProfile = () => {
-  console.log("Solicitud de borrado para la wallet:", wallet);
-  
-  // Limpiamos los estados locales para simular que el usuario ya no existe
-  setUser(null);
-  setUserGroup(null);
-  setWallet("");
-  setView('welcome');
-  
-  alert("Transacción enviada: Tu perfil ha sido eliminado del registro descentralizado.");
+    console.log("Solicitud de borrado para la wallet:", wallet);
+    
+    // Limpiamos los estados locales para simular que el usuario ya no existe
+    setUser(null);
+    setUserGroup(null);
+    setWallet("");
+    setView('welcome');
+    
+    alert("Transacción enviada: Tu perfil ha sido eliminado del registro descentralizado.");
+  };
+
+  const handleBlockUser = (reportId, targetUserName) => {
+    const target = allUsers.find(u => u.userName.toLowerCase() === targetUserName.toLowerCase());
+
+    if (!target) {
+      alert("Error: El usuario no existe.");
+      return;
+    }
+
+    if (target.userName === user.userName) {
+      alert("No puedes bloquearte a ti mismo.");
+      return;
+    }
+
+    setAllUsers(prev => prev.map(u => 
+      u.userName.toLowerCase() === targetUserName.toLowerCase() 
+      ? { ...u, isBanned: true, group: null } 
+      : u
+    ));
+    
+    setAllReports(prev => prev.filter(r => r.id !== reportId));
+    alert(`Usuario ${targetUserName} bloqueado correctamente.`);
+  };
+
+  const handleDeclineReport = (reportId) => {
+    setAllReports(prev => prev.filter(r => r.id !== reportId));
   };
 
   // Lógica de gestión de grupos e incidencias
@@ -114,9 +144,10 @@ function App() {
     alert(`¡${targetUserName} invitado con éxito!`);
   };
 
-  // FUNCIÓN handleJoinGroup (CU-06) - AHORA EN SU SITIO CORRECTO
+
   const handleJoinGroup = (groupName) => {
     const invitation = allUsers.find(u => 
+      /* esto se gestionara de otra forma */
       u.wallet.toLowerCase() === wallet.toLowerCase() && 
       u.group === groupName
     );
@@ -132,7 +163,23 @@ function App() {
 
   // Manejo de Reportes (Soporte)
   const handleSendReport = (data) => {
+      if (data.type === 'USER_REPORT') {
+      const targetExists = allUsers.find(u => u.userName.toLowerCase() === data.userName.toLowerCase());
+      if (!targetExists) {
+        alert("Error: El usuario que intentas reportar no existe en el registro.");
+        return;
+      }
+      if(targetExists.userName === user.userName) {
+        alert("No puedes reportarte a ti mismo.");
+        return;
+      }
+    }
+
     if (data.type === 'ADMIN_REQUEST') {
+      if (user.role === 'Admin de Sistema') {
+        alert("Ya eres administrador, no puedes solicitar este rol.");
+        return;
+      }
       setAllAdminRequests([...allAdminRequests, data]);
       alert("Propuesta de administrador enviada.");
     } else {
@@ -285,7 +332,7 @@ function App() {
         {view === 'admin-request' && (
           <AdminRequestForm user={user} wallet={wallet} onSubmit={handleSendReport} onCancel={() => setView('dashboard')} />
         )}
-        {view === 'view-reports' && <ReportList reports={allReports} />}
+        {view === 'view-reports' && <ReportList reports={allReports} onBlockUser={handleBlockUser} onDecline={handleDeclineReport} />}
         {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
           <AdminRequestList 
             requests={allAdminRequests} 
