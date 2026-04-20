@@ -11,6 +11,10 @@ import GroupForm from './components/groups/GroupFrom';
 import GroupManagement from './components/groups/GroupManagement';
 import UserProfile from './components/auth/UserProfile';
 import ReportForm from './components/reports/ReportForm';
+import ReportList from './components/reports/ReportList';
+import AdminRequestForm from './components/reports/AdminRequestForm';
+import AdminRequestList from './components/reports/AdminRequestList';
+import JoinGroupForm from './components/groups/JoinGroupForm';
 
 function App() {
   // Estados principales de la aplicación; Faltan por añadir algunos componentes
@@ -19,9 +23,10 @@ function App() {
   const [wallet, setWallet] = useState("");     
   const [incidences, setIncidences] = useState([]); 
   const [userGroup, setUserGroup] = useState(null); 
-  const [allReports, setAllReports] = useState([]); // Almacén interno de reportes
+  const [allReports, setAllReports] = useState([]);
+  const [allAdminRequests, setAllAdminRequests] = useState([]);
 
-  // Estado de usuarios simulado NO FUNCIONA 
+  // Estado de usuarios simulado 
   // tanto esto, como indicendes, como reportes, serán directamente redirigidos a la blockchain con los fetches correspondientes, pero para simular la experiencia de usuario, se mantienen en estado local
   const [allUsers, setAllUsers] = useState([
     { wallet: "0x1234567890abcdef1234567890abcdef12345678", userName: "User_Soporte_1", group: "LRHR" },
@@ -30,7 +35,7 @@ function App() {
   ]);
 
   // Autenticación y Registro
-  
+
   const handleLoginAttempt = (address) => {
     setWallet(address);
     const SYSTEM_ADMIN_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
@@ -60,13 +65,22 @@ function App() {
     setView('dashboard');
   };
 
+  const handleDeleteProfile = () => {
+  console.log("Solicitud de borrado para la wallet:", wallet);
+  
+  // Limpiamos los estados locales para simular que el usuario ya no existe
+  setUser(null);
+  setUserGroup(null);
+  setWallet("");
+  setView('welcome');
+  
+  alert("Transacción enviada: Tu perfil ha sido eliminado del registro descentralizado.");
+  };
+
   // Lógica de gestión de grupos e incidencias
 
   const handleCreateGroup = (groupName) => {
-    setUserGroup({
-      name: groupName,
-      isAdmin: true 
-    });
+    setUserGroup({ name: groupName, isAdmin: true });
     setView('dashboard');
   };
 
@@ -85,10 +99,10 @@ function App() {
     const userExists = allUsers.find(u => u.userName.toLowerCase() === targetUserName.toLowerCase());
 
     if (!userExists) {
-      alert("Usuario no encontrado en la red.");
+      alert("Usuario no encontrado.");
       return;
     }
-    
+
     if (userExists.group) {
       alert(`El usuario ya pertenece al grupo ${userExists.group}`);
       return;
@@ -100,15 +114,46 @@ function App() {
     alert(`¡${targetUserName} invitado con éxito!`);
   };
 
-  const handleSendReport = (reportData) => {
-    setAllReports([...allReports, reportData]);
-    console.log("Nuevo Reporte Registrado en Blockchain:", reportData);
-    alert(`Reporte ${reportData.id} enviado correctamente.`);
-    setView('dashboard'); 
+  // FUNCIÓN handleJoinGroup (CU-06) - AHORA EN SU SITIO CORRECTO
+  const handleJoinGroup = (groupName) => {
+    const invitation = allUsers.find(u => 
+      u.wallet.toLowerCase() === wallet.toLowerCase() && 
+      u.group === groupName
+    );
+
+    if (invitation) {
+      setUserGroup({ name: groupName, isAdmin: false });
+      setView('dashboard');
+      alert(`¡Éxito! Te has unido al grupo ${groupName}.`);
+    } else {
+      alert("No tienes invitaciones pendientes para este grupo.");
+    }
   };
 
-  // Views de la aplicación
+  // Manejo de Reportes (Soporte)
+  const handleSendReport = (data) => {
+    if (data.type === 'ADMIN_REQUEST') {
+      setAllAdminRequests([...allAdminRequests, data]);
+      alert("Propuesta de administrador enviada.");
+    } else {
+      setAllReports([...allReports, data]);
+      alert("Reporte registrado.");
+    }
+    setView('dashboard');
+  };
 
+  const handleAcceptAdmin = (wallet) => {
+    alert(`Usuario ${wallet} ascendido a Administrador.`);
+    setAllAdminRequests(allAdminRequests.filter(r => r.wallet !== wallet));
+  };
+
+  const handleDeclineAdmin = (wallet) => {
+    alert(`Propuesta de ${wallet} rechazada.`);
+    setAllAdminRequests(allAdminRequests.filter(r => r.wallet !== wallet));
+  };
+
+
+  // Vistas previas a la autenticación
   if (view === 'welcome') {
     return (
       <Container className="d-flex justify-content-center align-items-center vh-100">
@@ -147,7 +192,7 @@ function App() {
       </Container>
     );
   }
-
+  // Vistas principales después de la autenticación
   return (
     <div className="bg-light min-vh-100">
       <Navbar bg="white" expand="lg" className="shadow-sm border-bottom py-3 mb-4">
@@ -159,21 +204,26 @@ function App() {
           <Navbar.Collapse id="main-nav">
             <Nav className="me-auto ms-4">
               <NavDropdown title="Grupo">
-                {userGroup ? (
-                  <>
-                    <NavDropdown.Item>Mi Grupo: <b>{userGroup.name}</b></NavDropdown.Item>
-                    {userGroup.isAdmin && (
-                      <>
-                        <NavDropdown.Divider />
-                        <NavDropdown.Item onClick={() => setView('manage-members')} className="text-danger fw-bold">
-                          Gestión de Miembros
-                        </NavDropdown.Item>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <NavDropdown.Item onClick={() => setView('create-group')}>Crear un Grupo</NavDropdown.Item>
-                )}
+                <NavDropdown title="Grupo">
+                  {userGroup ? (
+                    <>
+                      <NavDropdown.Item>Mi Grupo: <b>{userGroup.name}</b></NavDropdown.Item>
+                      <NavDropdown.Divider />
+                      <NavDropdown.Item onClick={() => setView('manage-members')} className="text-danger fw-bold">
+                        Gestión de Miembros
+                      </NavDropdown.Item>
+                    </>
+                  ) : (
+                    <>
+                      <NavDropdown.Item onClick={() => setView('create-group')}>
+                        Crear un Grupo
+                      </NavDropdown.Item>
+                      <NavDropdown.Item onClick={() => setView('join-group')}>
+                        Unirse a un Grupo
+                      </NavDropdown.Item>
+                    </>
+                  )}
+                </NavDropdown>
               </NavDropdown>
 
               <NavDropdown title="Incidencias">
@@ -183,6 +233,16 @@ function App() {
 
               <NavDropdown title="Soporte">
                 <NavDropdown.Item onClick={() => setView('report-form')}>Reportar Bug / Usuario</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => setView('admin-request')}>Petición de Administrador</NavDropdown.Item>
+                {user?.role === 'Admin de Sistema' && (
+                  <>
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item onClick={() => setView('view-reports')}>Ver Reportes</NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => setView('view-requests')} className="fw-bold text-primary">
+                      Ver Peticiones de Admin
+                    </NavDropdown.Item>
+                  </>
+                )}
               </NavDropdown>
             </Nav>
 
@@ -209,26 +269,28 @@ function App() {
           <div className="bg-white p-5 rounded-4 shadow-sm border text-center">
             <h2 className="display-6 fw-bold">Panel de Control</h2>
             <p className="text-muted">Bienvenido a la red descentralizada de IncidenciUS.</p>
-            {!userGroup && user?.role !== 'Admin de Sistema' && (
-               <div className="alert alert-info d-inline-block mt-3">
-                 No perteneces a ningún grupo. <button className="btn btn-link p-0 fw-bold" onClick={() => setView('create-group')}>Crea uno aquí</button>
-               </div>
-            )}
           </div>
         )}
-
+        {view === 'join-group' && (<JoinGroupForm onJoin={handleJoinGroup} onCancel={() => setView('dashboard')}/>)}
         {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroup} onCancel={() => setView('dashboard')} />}
         {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
         {view === 'list' && <IncidenceList incidences={incidences} />}
-        {view === 'profile' && <UserProfile user={user} userGroup={userGroup} wallet={wallet} />}
+        {view === 'profile' && (<UserProfile user={user} userGroup={userGroup} onDeleteProfile={handleDeleteProfile}/>)}
         {view === 'manage-members' && (
           <GroupManagement groupName={userGroup.name} members={allUsers.filter(u => u.group === userGroup.name)} onRemove={handleRemoveMember} onInvite={handleInviteMember} />
         )}
         {view === 'report-form' && (
-          <ReportForm 
-            user={user} 
-            onSubmit={handleSendReport} 
-            onCancel={() => setView('dashboard')} 
+          <ReportForm user={user} onSubmit={handleSendReport} onCancel={() => setView('dashboard')} />
+        )}
+        {view === 'admin-request' && (
+          <AdminRequestForm user={user} wallet={wallet} onSubmit={handleSendReport} onCancel={() => setView('dashboard')} />
+        )}
+        {view === 'view-reports' && <ReportList reports={allReports} />}
+        {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
+          <AdminRequestList 
+            requests={allAdminRequests} 
+            onAccept={handleAcceptAdmin} 
+            onDecline={handleDeclineAdmin} 
           />
         )}
       </Container>
