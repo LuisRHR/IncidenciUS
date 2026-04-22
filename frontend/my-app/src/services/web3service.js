@@ -16,6 +16,7 @@ const USERS_ABI = [
     "function deleteUser() public",
     "function giveUserAdminStatus() public",
     "function blockUser(string memory userNameHashed) public",
+    "function getActualUser() public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
     "function getIdByWallet(address wallet) public view returns (uint)",
     "function getIdByUserName(string memory userNameHashed) public view returns (uint)",
     "function getIdByEmail(string memory emailHashed) public view returns (uint)",
@@ -28,6 +29,7 @@ const GROUPS_ABI = [
     "function userJoined(string memory groupName) public",
     "function deleteUserFromGroup(string memory userNameHashed) public",
     "function deleteGroup() public",
+    "function getGroupMembers(uint groupId) public view returns (uint[] memory)",
     "function getGroupById(uint groupId) public view returns (tuple(string groupName, string description, uint[] members, uint[] invitedUsers, uint admin))",
     "function getIdByGroupName(string memory groupName) public view returns (uint)",
     "function getGroupIdByAdminWallet(address adminWallet) public view returns (uint)",
@@ -256,6 +258,39 @@ export const Web3Service = {
         }
     },
 
+    // Este de aquí es una función auxiliar que puede ser util en algunos lugares del frontend
+    getActualUser: async () => {
+        const contract = await getContract('USERS', true);
+        try {
+            const userBC = await contract.getActualUser();
+            const cid = userBC.userInfoCID;
+            let ipfsData = { userName: "Usuario Desconocido", email: "" };
+            if (cid && cid !== "N/A" && cid !== "") {
+                ipfsData = await fetchFromIPFS(cid);
+                if (ipfsData.error) {
+                    ipfsData = { userName: "Usuario Desconocido", email: "" };
+                }
+            }
+
+            return {
+                exists: true,
+                uid: Number(userBC.uid),
+                wallet: userBC.wallet,
+                isBanned: userBC.isBanned,
+                // Mapeo del Enum: 0 = COMUN, 1 = ADMINISTRADOR_SISTEMA
+                role: userBC.condition === 1n ? 'Admin de Sistema' : 'Comun',
+                condition: Number(userBC.condition),
+                cid: cid,
+                // Datos traídos de IPFS
+                userName: ipfsData.userName, 
+                email: ipfsData.email
+            };
+        } catch (e) {
+            console.log("Usuario no registrado en el contrato.");
+            return { exists: false };
+        }
+    },
+
     giveUserAdminStatus: async () => {
         const contract = await getContract('USERS', true);
         try {
@@ -329,6 +364,38 @@ export const Web3Service = {
         }
     },
 
+    getGroupMembers: async (groupId) => {
+        const contract = await getContract('GROUPS', true);
+        try {
+            const members = await contract.getGroupMembers(groupId);
+            return members;
+        } catch (error) {
+            console.error("Error fetching group members:", error);
+            throw error;
+        }
+    },
+
+    getActualGroup: async () => {
+        const contract = await getContract('GROUPS', true);
+        try {
+            const groupId = await contract.getGroupIdByUserWallet(window.ethereum.selectedAddress);
+            if (groupId.toString() === "0") {
+                return null; // El usuario no pertenece a ningún grupo
+            }
+            const groupData = await contract.getGroupById(groupId);
+            return {
+                id: Number(groupId),
+                name: groupData.groupName,
+                description: groupData.description,
+                members: groupData.members.map(m => Number(m)),
+                invitedUsers: groupData.invitedUsers.map(i => Number(i)),
+                admin: Number(groupData.admin)
+            };
+        } catch (error) {
+            console.error("Error fetching actual group:", error);
+            throw error;
+        }
+    },
 
     createBugReport: async (title, description, proofs, pinataJwt = null) => {
         const contract = await getContract('REPORTS', true);
@@ -534,6 +601,8 @@ export const Web3Service = {
             return [];
         }
     },
+
+
 
     createAdminRequest: async (requestReason) => {
         const contract = await getContract('ADMIN_REQUESTS', true);

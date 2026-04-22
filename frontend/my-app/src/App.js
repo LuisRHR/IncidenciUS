@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav, NavDropdown, Container, Badge } from 'react-bootstrap';
+import { Web3Service } from './services/web3service';
 
 // Importación de componentes
 import Login from './components/auth/Login';
@@ -25,18 +26,20 @@ function App() {
   const [userGroup, setUserGroup] = useState(null); 
   const [allReports, setAllReports] = useState([]);
   const [allAdminRequests, setAllAdminRequests] = useState([]);
-
-  // Mock de usuarios para gestión de grupos, solo para propósitos de demostración
-  const [allUsers, setAllUsers] = useState([
-    { wallet: "0x1234567890abcdef1234567890abcdef12345678", userName: "User_Soporte_1", group: "LRHR", isBanned: false },
-    { wallet: "0xabcdef1234567890abcdef1234567890abcdef12", userName: "User_Soporte_2", group: "LRHR", isBanned: false },
-  ]);
+  const [allMembers, setAllMembers] = useState([]);
+  //Esto puede ser interesante, lo dejo aquí porque lo use para el mock de todos los usuarios, pero ahora mismo no se usa
+  const [allUsers, setAllUsers] = useState([]);
 
   const handleLoginSuccess = (address, userData) => {
     setWallet(address);
     if (userData && userData.exists) {
       setUser(userData);
       setView('dashboard');
+      let dataGroup = Web3Service.getActualGroup();
+      if (dataGroup) {
+        setUserGroup(dataGroup);
+        setAllMembers(dataGroup.members);
+      }
     } else {
       alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
       setView('register');
@@ -203,7 +206,7 @@ function App() {
         {view === 'manage-members' && (
           <GroupManagement 
             groupName={userGroup?.name} 
-            members={allUsers.filter(u => u.group === userGroup?.name)} 
+            members={allMembers} 
             onRemoveSuccess={() => setView('dashboard')} 
           />
         )}

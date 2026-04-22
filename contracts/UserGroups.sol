@@ -145,6 +145,11 @@ contract Groups {
         delete groups[groupId];
     }
 
+    function getGroupMembers() public view returns (uint[] memory) {
+        uint groupId = walletToGroupId[msg.sender];
+        return groups[groupId].members;
+    }
+
     function getGroupById(uint groupId) public view returns (Group memory) {
         return groups[groupId];
     }

@@ -77,6 +77,12 @@ contract Users {
         users[uidToBlock].isBanned = true;
     }
 
+    function getActualUser() public view returns (User memory) {
+        uint uid = walletToUid[msg.sender];
+        require(uid != 0, "Usuario no registrado");
+        return users[uid];
+    }
+
     function getUserById(uint uid) public view returns (User memory) {
         return users[uid];
     }
