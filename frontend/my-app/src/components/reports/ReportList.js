@@ -1,6 +1,8 @@
 import React from 'react';
 import { Table, Badge, Card, Container, Button } from 'react-bootstrap';
 
+// TO-DO Traerse los reportes y mostrar el listado, ademas de implementar las acciones de aceptar (bloquear usuario o marcar bug como resuelto) y declinar (marcar como no valido) cada reporte. Para esto se pueden crear endpoints en el backend que reciban el id del reporte y realicen la acción correspondiente, luego actualizar el estado del componente para reflejar los cambios.
+
 const ReportList = ({ reports, onBlockUser, onDecline }) => {
     return (
         <Container className="py-4">

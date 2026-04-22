@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, Button, Alert } from "react-bootstrap";
+import { Web3Service } from "../../services/web3service";
 
 const Login = ({ onConnect }) => {
     const [error, setError] = React.useState(null);
@@ -11,18 +12,29 @@ const Login = ({ onConnect }) => {
 
         if (window.ethereum) {
             try {   
-                setTimeout(() => {
-                    const fakeAddress = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
-                    onConnect(fakeAddress);
-                    setIsConnecting(false);
-                }, 1000);
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const address = accounts[0];
+
+                const userData = await Web3Service.login();
+
+                if (userData.exists) {
+                    if (userData.isBanned) {
+                        setError("Esta cuenta ha sido bloqueada.");
+                        setIsConnecting(false);
+                        return;
+                    }
+                    onConnect(address, userData); 
+                } else {
+                    onConnect(address, null); 
+                }
             } catch (err) {
-                setError("Error al conectar con MetaMask");
+                setError("Error al validar usuario en Blockchain");
+            } finally {
                 setIsConnecting(false);
             }
         } else {
-            setError("MetaMask no está instalado");
-            setIsConnecting(false);
+                setError("Instala MetaMask");
+                setIsConnecting(false);
         }
     };
 

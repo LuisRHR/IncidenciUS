@@ -1,38 +1,68 @@
 import React, { useState } from 'react';
-import { Table, Button, Badge, Card, Form, InputGroup } from 'react-bootstrap';
+import { Table, Button, Card, Form, InputGroup, Alert, Spinner } from 'react-bootstrap';
+import { Web3Service } from "../../services/web3service";
 
-//Implementa logica de invitar a usuario y eliminar usuarios del grupo 
-
-const GroupManagement = ({ groupName, members, onRemove, onInvite }) => {
+const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
   const [searchName, setSearchName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const handleInvite = (e) => {
+  const handleInvite = async (e) => {
     e.preventDefault();
-    if (searchName.trim()) {
-      onInvite(searchName);
+    if (!searchName.trim()) return;
+
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await Web3Service.inviteUserToGroup(searchName);
+      setSuccess(`${searchName} ha sido invitado al grupo exitosamente.`);
       setSearchName('');
+    } catch (err) {
+      setError(err.message || "Error al invitar al usuario. Verifica que exista.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemove = async (userName) => {
+    if (!window.confirm(`¿Estás seguro de expulsar a ${userName}?`)) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await Web3Service.removeUserFromGroup(userName);
+      onRemoveSuccess(userName); // Avisa a App.js para actualizar la lista visual
+      setSuccess(`Usuario ${userName} expulsado del grupo.`);
+    } catch (err) {
+      setError(err.message || "Error al expulsar al miembro.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Card className="shadow-sm border-0 rounded-4">
-      <Card.Body className="p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 className="fw-bold mb-0">Gestión de {groupName}</h3>
-            <p className="text-muted small">Añade nuevos miembros por su nombre de usuario.</p>
-          </div>
-        </div>
+      <Card.Header className="bg-white py-3">
+        <h5 className="mb-0 fw-bold">Gestionar Grupo: {groupName}</h5>
+      </Card.Header>
+      <Card.Body>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
         <Form onSubmit={handleInvite} className="mb-4">
+          <Form.Label className="small fw-bold text-muted">Invitar nuevo miembro (Nombre de usuario)</Form.Label>
           <InputGroup>
             <Form.Control
-              placeholder="Nombre de usuario (ej: Juan_Dev)..."
+              placeholder="Nombre del usuario..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
+              disabled={isSubmitting}
             />
-            <Button variant="primary" type="submit">
-              Invitar al Grupo
+            <Button variant="primary" type="submit" disabled={isSubmitting || !searchName.trim()}>
+              {isSubmitting ? <Spinner size="sm" animation="border" /> : "Invitar"}
             </Button>
           </InputGroup>
         </Form>
@@ -46,17 +76,26 @@ const GroupManagement = ({ groupName, members, onRemove, onInvite }) => {
             </tr>
           </thead>
           <tbody>
-            {members.map((member) => (
-              <tr key={member.wallet}>
-                <td><strong>{member.userName}</strong></td>
-                <td><code className="small">{member.wallet.substring(0,15)}...</code></td>
-                <td className="text-end">
-                  <Button variant="link" className="text-danger p-0" onClick={() => onRemove(member.wallet)}>
-                    Expulsar
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {members.length === 0 ? (
+              <tr><td colSpan="3" className="text-center text-muted py-4">No hay miembros en el grupo aún</td></tr>
+            ) : (
+              members.map((member) => (
+                <tr key={member.wallet}>
+                  <td><strong>{member.userName}</strong></td>
+                  <td><code className="small">{member.wallet.substring(0, 15)}...</code></td>
+                  <td className="text-end">
+                    <Button 
+                      variant="link" 
+                      className="text-danger p-0" 
+                      onClick={() => handleRemove(member.userName)}
+                      disabled={isSubmitting}
+                    >
+                      Expulsar
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </Table>
       </Card.Body>

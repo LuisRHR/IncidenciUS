@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Container, Card, Form, Button, Alert } from "react-bootstrap";
+import { Web3Service } from "../../services/web3service";
 
 const Register = ({ wallet, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -18,30 +19,32 @@ const Register = ({ wallet, onSuccess }) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
+        
+        try {
+            if (!validateEmailFormat(formData.email)) {
+                setError("Por favor, introduce un email válido");
+                setIsSubmitting(false);
+                return;
+            }
 
-        if (!formData.userName.trim() || !formData.email.trim()) {
-            setError("Todos los campos son obligatorios");
-            setIsSubmitting(false);
-            return;
-        }
-        if (!validateEmailFormat(formData.email)) {
-            setError("Formato de email no válido");
-            setIsSubmitting(false);
-            return;
-        }
+            const result = await Web3Service.register(formData.userName, formData.email);
 
-        // Simulamos registro exitoso
-        setTimeout(() => {
-            const newUserData = {
+            const newUser = {
                 wallet,
                 userName: formData.userName,
                 email: formData.email,
-                isBanned: false,
-                role: "user"
+                role: "Comun",
+                condition: 0,
+                cid: result.cid,
+                exists: true
             };
-            onSuccess(newUserData);
+            
+            onSuccess(newUser);
+        } catch (err) {
+            setError(err.message || "Error en la transacción de registro. Asegúrate de que los datos sean únicos.");
+        } finally {
             setIsSubmitting(false);
-        }, 1000);
+        }
     };
 
   return (
