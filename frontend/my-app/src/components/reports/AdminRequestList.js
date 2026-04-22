@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Table, Button, Card, Container, Spinner, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
-const AdminRequestList = ({ requests, onAcceptSuccess, onDecline }) => {
+const AdminRequestList = ({onAcceptSuccess, onDecline }) => {
     const [processingWallet, setProcessingWallet] = useState(null);
     const [error, setError] = useState(null);
+    const [requests, setRequests] = useState([]);
+    
+    const loadRequests = useCallback(async () => {
+        setError(null);
+        try {
+            const reqs = await Web3Service.getAdminRequests();
+            setRequests(reqs || []);
+        } catch (err) {
+            console.error("Error loading admin requests:", err);
+            setError("Error al cargar las solicitudes de administrador. Intenta de nuevo.");
+            setRequests([]);
+        }
+    }, []);
+    React.useEffect(() => {
+        loadRequests();
+    }, [loadRequests]);
 
     const handleAccept = async (wallet) => {
         setProcessingWallet(wallet);

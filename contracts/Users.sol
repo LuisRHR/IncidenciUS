@@ -40,6 +40,7 @@ contract Users {
     function login() public view returns (User memory) {
         uint uid = walletToUid[msg.sender];
         require(uid != 0, "Usuario no registrado");
+        require(!users[uid].isBanned, "Usuario bloqueado");
         return users[uid];
     }
 

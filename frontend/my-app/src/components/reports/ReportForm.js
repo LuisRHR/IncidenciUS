@@ -26,19 +26,7 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
                 result = await Web3Service.createUserReport(targetUserName, targetEmail, description, proofs);
             }
 
-            const reportData = {
-                sender: user.userName,
-                description,
-                proofs,
-                type: reportType === 'bug' ? 'BUG_REPORT' : 'USER_REPORT',
-                title: reportType === 'bug' ? title : '',
-                userName: reportType === 'user' ? targetUserName : '',
-                email: reportType === 'user' ? targetEmail : '',
-                id: Date.now(),
-                txHash: result.hash
-            };
-
-            onSubmit(reportData);
+            onSubmit();
         } catch (err) {
             setError(err.message || "Error al enviar el reporte. Intenta de nuevo.");
         } finally {

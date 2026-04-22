@@ -22,11 +22,7 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
 
             const result = await Web3Service.createGroup(groupName, description);
 
-            onCreateGroup({
-                name: groupName,
-                description: description,
-                txHash: result.hash
-            });
+            onCreateGroup();
         } catch (err) {
             setError(err.message || "Error al crear el grupo. Intenta de nuevo.");
         } finally {

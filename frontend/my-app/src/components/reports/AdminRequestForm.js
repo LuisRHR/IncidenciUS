@@ -15,16 +15,7 @@ const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
         try {
             const result = await Web3Service.createAdminRequest(requestReason);
 
-            const requestData = {
-                type: 'ADMIN_REQUEST',
-                userName: user.userName,
-                wallet: wallet,
-                requestReason: requestReason,
-                id: Date.now(),
-                txHash: result.hash
-            };
-            
-            onSubmit(requestData);
+            onSubmit();
         } catch (err) {
             setError(err.message || "Error al enviar la solicitud. Intenta de nuevo.");
         } finally {

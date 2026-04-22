@@ -7,7 +7,8 @@ import { Web3Service } from './services/web3service';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import IncidenceForm from './components/incidences/IncidenceForm';
-import IncidenceList from './components/incidences/IncidenceList';
+import UserIncidencesList from './components/incidences/UserIncidencesList';
+import GroupIncidencesList from './components/incidences/GroupIncidencesList';
 import GroupForm from './components/groups/GroupFrom';
 import GroupManagement from './components/groups/GroupManagement';
 import UserProfile from './components/auth/UserProfile';
@@ -21,11 +22,8 @@ function App() {
   // Estados principales de la aplicación
   const [view, setView] = useState('welcome'); 
   const [user, setUser] = useState(null);       
-  const [wallet, setWallet] = useState("");     
-  const [incidences, setIncidences] = useState([]); 
+  const [wallet, setWallet] = useState("");
   const [userGroup, setUserGroup] = useState(null); 
-  const [allReports, setAllReports] = useState([]);
-  const [allAdminRequests, setAllAdminRequests] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   //Esto puede ser interesante, lo dejo aquí porque lo use para el mock de todos los usuarios, pero ahora mismo no se usa
   const [allUsers, setAllUsers] = useState([]);
@@ -61,30 +59,37 @@ function App() {
     setView('welcome');
 
   };
-
+  // Muchos de estos handlers van a cambiar teniendo en cuenta que ahora no hay que actualizar el estado porque se encargara de mostrar las cosas las vistas, pero los dejo aquí para que se vea que se ha pensado en ello y no se ha dejado de lado, aunque ahora mismo no hagan nada
   const handleIncidenceSubmit = (newInc) => {
-    setIncidences([newInc, ...incidences]);
-    setView('list'); 
+    setView('dashboard'); 
   };
 
-  const handleCreateGroupSuccess = (groupData) => {
-    setUserGroup({ ...groupData, isAdmin: true });
+  const handleCreateGroupSuccess = () => {
+    let dataGroup = Web3Service.getActualGroup();
+    if (dataGroup) {
+      groupData = {dataGroup};
+    }
+    setUserGroup({groupData});
+    setAllMembers(groupData.members);
     setView('dashboard');
   };
 
-  const handleJoinGroupSuccess = (groupData) => {
-    setUserGroup({ ...groupData, isAdmin: false });
+  const handleJoinGroupSuccess = () => {
+    let dataGroup = Web3Service.getActualGroup();
+    if (dataGroup) {
+      groupData = {dataGroup};
+    }
+    setUserGroup({groupData});
+    setAllMembers(groupData.members);
     setView('dashboard');
   };
 
   // Estos handlers ahora solo actualizan el estado visual tras la acción del componente
-  const handleReportSuccess = (reportData) => {
-    setAllReports([reportData, ...allReports]);
+  const handleReportSuccess = () => {
     setView('dashboard');
   };
 
-  const handleAdminRequestSuccess = (reqData) => {
-    setAllAdminRequests([reqData, ...allAdminRequests]);
+  const handleAdminRequestSuccess = () => {
     setView('dashboard');
   };
 
@@ -153,7 +158,8 @@ function App() {
 
               <NavDropdown title="Incidencias" id="nav-inc">
                 <NavDropdown.Item onClick={() => setView('create')}>Reportar</NavDropdown.Item>
-                <NavDropdown.Item onClick={() => setView('list')}>Ver Historial</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => setView('list-user-incidences')}>Ver Historial Por Usuario</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => setView('list-group-incidences')}>Ver Historial del Grupo</NavDropdown.Item>
               </NavDropdown>
 
               <NavDropdown title="Soporte" id="nav-support">
@@ -201,12 +207,15 @@ function App() {
         {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
         {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
         {view === 'list' && <IncidenceList incidences={incidences} />}
+        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={}/>}
+        {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('list-group-incidences')}/>}
         {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
         
         {view === 'manage-members' && (
           <GroupManagement 
             groupName={userGroup?.name} 
             members={allMembers} 
+            //Es probable que muchos handlers aquí definidos acaben como este 
             onRemoveSuccess={() => setView('dashboard')} 
           />
         )}
@@ -214,9 +223,9 @@ function App() {
         {view === 'report-form' && <ReportForm user={user} onSubmit={handleReportSuccess} onCancel={() => setView('dashboard')} />}
         {view === 'admin-request' && <AdminRequestForm user={user} wallet={wallet} onSubmit={handleAdminRequestSuccess} onCancel={() => setView('dashboard')} />}
         
-        {view === 'view-reports' && <ReportList reports={allReports} onDecline={() => setView('dashboard')} />}
+        {view === 'view-reports' && <ReportList onDecline={() => setView('dashboard')} />}
         {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
-          <AdminRequestList requests={allAdminRequests} onAcceptSuccess={() => setView('dashboard')} onDecline={() => setView('dashboard')} />
+          <AdminRequestList onAcceptSuccess={() => setView('dashboard')} onDecline={() => setView('dashboard')} />
         )}
       </Container>
     </div>

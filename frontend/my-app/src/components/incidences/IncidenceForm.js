@@ -32,19 +32,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
         incidenceDate
       );
 
-      const newIncidence = {
-        title: title, 
-        description: description,
-        priority: ['Baja', 'Media', 'Alta'][priorityNum],
-        sender: user ? user.userName : "Anónimo",
-        userReceiver: userReceiver || "---",
-        groupReceiver: groupReceiver || "---",
-        date: incidenceDate,
-        cid: "Retrieved from blockchain",
-        txHash: result.hash
-      };
-
-      onSubmit(newIncidence);
+      onSubmit();
     } catch (err) {
       setError(err.message || "Error al enviar la incidencia. Intenta de nuevo.");
     } finally {
