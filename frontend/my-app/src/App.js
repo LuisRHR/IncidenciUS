@@ -67,20 +67,18 @@ function App() {
   const handleCreateGroupSuccess = () => {
     let dataGroup = Web3Service.getActualGroup();
     if (dataGroup) {
-      groupData = {dataGroup};
+      setUserGroup({dataGroup});
+      setAllMembers(dataGroup.members);
     }
-    setUserGroup({groupData});
-    setAllMembers(groupData.members);
     setView('dashboard');
   };
 
   const handleJoinGroupSuccess = () => {
     let dataGroup = Web3Service.getActualGroup();
     if (dataGroup) {
-      groupData = {dataGroup};
+      setUserGroup({dataGroup});
+      setAllMembers(dataGroup.members);
     }
-    setUserGroup({groupData});
-    setAllMembers(groupData.members);
     setView('dashboard');
   };
 
@@ -206,8 +204,7 @@ function App() {
         {view === 'join-group' && <JoinGroupForm onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
         {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
         {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
-        {view === 'list' && <IncidenceList incidences={incidences} />}
-        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={}/>}
+        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('list-user-incidences')}/>}
         {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('list-group-incidences')}/>}
         {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
         
