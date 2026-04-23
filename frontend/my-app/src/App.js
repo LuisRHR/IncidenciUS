@@ -212,7 +212,6 @@ function App() {
           <GroupManagement 
             groupName={userGroup?.name} 
             members={allMembers} 
-            //Es probable que muchos handlers aquí definidos acaben como este 
             onRemoveSuccess={() => setView('dashboard')} 
           />
         )}

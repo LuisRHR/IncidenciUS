@@ -34,10 +34,25 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
     setError(null);
     try {
       await Web3Service.removeUserFromGroup(userName);
-      onRemoveSuccess(userName); // Avisa a App.js para actualizar la lista visual
+      onRemoveSuccess(userName);
       setSuccess(`Usuario ${userName} expulsado del grupo.`);
     } catch (err) {
       setError(err.message || "Error al expulsar al miembro.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!window.confirm(`¿Estás seguro de eliminar el grupo ${groupName}? Esta acción no se puede deshacer.`)) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await Web3Service.deleteGroup(groupName);
+      setSuccess(`Grupo ${groupName} eliminado exitosamente.`);
+      onRemoveSuccess(`${groupName} eliminado`);
+    } catch (err) {
+      setError(err.message || "Error al eliminar el grupo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -98,6 +113,12 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
             )}
           </tbody>
         </Table>
+        <hr />
+        <div className="d-flex justify-content-end">
+          <Button variant="outline-danger" onClick={handleDeleteGroup} disabled={isSubmitting}>
+            {isSubmitting ? <Spinner size="sm" animation="border" /> : "Eliminar Grupo"}
+          </Button>
+        </div>
       </Card.Body>
     </Card>
   );
