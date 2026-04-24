@@ -25,18 +25,21 @@ function App() {
   const [wallet, setWallet] = useState("");
   const [userGroup, setUserGroup] = useState(null); 
   const [allMembers, setAllMembers] = useState([]);
-  //Esto puede ser interesante, lo dejo aquí porque lo use para el mock de todos los usuarios, pero ahora mismo no se usa
   const [allUsers, setAllUsers] = useState([]);
 
-  const handleLoginSuccess = (address, userData) => {
+  const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
     if (userData && userData.exists) {
       setUser(userData);
       setView('dashboard');
-      let dataGroup = Web3Service.getActualGroup();
-      if (dataGroup) {
-        setUserGroup(dataGroup);
-        setAllMembers(dataGroup.members);
+      try {
+        let dataGroup = await Web3Service.getActualGroup();
+        if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
+          setUserGroup(dataGroup);
+          setAllMembers(dataGroup.members);
+        }
+      } catch (error) {
+        console.error("Error al obtener información del grupo:", error);
       }
     } else {
       alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
@@ -46,9 +49,8 @@ function App() {
 
 
   const handleRegisterSuccess = (userData) => {
-    setUser(userData);
-    setWallet(userData.wallet);
-    setView('dashboard');
+    alert("Registro exitoso. Ahora puedes iniciar sesión con tu wallet.");
+    setView('welcome');
   };
 
   const handleDeleteProfileSuccess = () => {
@@ -64,22 +66,32 @@ function App() {
     setView('dashboard'); 
   };
 
-  const handleCreateGroupSuccess = () => {
-    let dataGroup = Web3Service.getActualGroup();
-    if (dataGroup) {
-      setUserGroup({dataGroup});
-      setAllMembers(dataGroup.members);
+  const handleCreateGroupSuccess = async () => {
+    try {
+      let dataGroup = await Web3Service.getActualGroup();
+      if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
+        setUserGroup(dataGroup);
+        setAllMembers(dataGroup.members || []);
+      }
+      setView('dashboard');
+    } catch (error) {
+      console.error("Error al obtener información del grupo:", error);
+      setView('dashboard');
     }
-    setView('dashboard');
   };
 
-  const handleJoinGroupSuccess = () => {
-    let dataGroup = Web3Service.getActualGroup();
-    if (dataGroup) {
-      setUserGroup({dataGroup});
-      setAllMembers(dataGroup.members);
+  const handleJoinGroupSuccess = async () => {
+    try {
+      let dataGroup = await Web3Service.getActualGroup();
+      if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
+        setUserGroup(dataGroup);
+        setAllMembers(dataGroup.members);
+      }
+      setView('dashboard');
+    } catch (error) {
+      console.error("Error al obtener información del grupo:", error);
+      setView('dashboard');
     }
-    setView('dashboard');
   };
 
   // Estos handlers ahora solo actualizan el estado visual tras la acción del componente
@@ -88,6 +100,29 @@ function App() {
   };
 
   const handleAdminRequestSuccess = () => {
+    setView('dashboard');
+  };
+
+  // Handler para cuando se expulsa un usuario del grupo
+  const handleGroupMemberRemoved = async (removedUserName) => {
+    try {
+      // Obtener datos actualizados del blockchain
+      const updatedGroup = await Web3Service.getActualGroup();
+      if (updatedGroup) {
+        setUserGroup(updatedGroup);
+        setAllMembers(updatedGroup.members);
+        localStorage.setItem('userGroup', JSON.stringify(updatedGroup));
+      }
+    } catch (error) {
+      console.error("Error actualizando grupo después de expulsar usuario:", error);
+    }
+  };
+
+  // Handler para cuando se elimina el grupo
+  const handleGroupDeleted = () => {
+    setUserGroup(null);
+    setAllMembers([]);
+    localStorage.removeItem('userGroup');
     setView('dashboard');
   };
 
@@ -141,9 +176,11 @@ function App() {
                     <>
                       <NavDropdown.Item>Mi Grupo: <b>{userGroup.name}</b></NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item onClick={() => setView('manage-members')} className="text-danger fw-bold">
-                        Gestión de Miembros
-                      </NavDropdown.Item>
+                      {user?.uid === userGroup.admin && (
+                        <NavDropdown.Item onClick={() => setView('manage-members')} className="fw-bold text-primary">
+                          Gestión de miembros
+                        </NavDropdown.Item>
+                      )}
                     </>
                   ) : (
                     <>
@@ -204,15 +241,16 @@ function App() {
         {view === 'join-group' && <JoinGroupForm onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
         {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
         {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
-        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('list-user-incidences')}/>}
-        {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('list-group-incidences')}/>}
+        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
+        {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}
         {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
         
         {view === 'manage-members' && (
           <GroupManagement 
             groupName={userGroup?.name} 
             members={allMembers} 
-            onRemoveSuccess={() => setView('dashboard')} 
+            onMemberRemoved={handleGroupMemberRemoved}
+            onGroupDeleted={handleGroupDeleted}
           />
         )}
         

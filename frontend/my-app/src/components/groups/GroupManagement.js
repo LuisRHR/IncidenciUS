@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Form, InputGroup, Alert, Spinner } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
-const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
+const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }) => {
   const [searchName, setSearchName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [membersInfo, setMembersInfo] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  useEffect(() => {
+    const fetchMembersInfo = async () => {
+      if (!members || members.length === 0) {
+        setMembersInfo([]);
+        return;
+      }
+
+      setLoadingMembers(true);
+      try {
+        if (typeof members[0] === 'number') {
+          const infos = await Web3Service.getMembersInfo(members);
+          setMembersInfo(infos);
+        } else {
+          setMembersInfo(members);
+        }
+      } catch (err) {
+        console.error("Error fetching members info:", err);
+        setMembersInfo([]);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetchMembersInfo();
+  }, [members]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -34,8 +62,8 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
     setError(null);
     try {
       await Web3Service.removeUserFromGroup(userName);
-      onRemoveSuccess(userName);
       setSuccess(`Usuario ${userName} expulsado del grupo.`);
+      onMemberRemoved(userName);
     } catch (err) {
       setError(err.message || "Error al expulsar al miembro.");
     } finally {
@@ -50,7 +78,7 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
     try {
       await Web3Service.deleteGroup(groupName);
       setSuccess(`Grupo ${groupName} eliminado exitosamente.`);
-      onRemoveSuccess(`${groupName} eliminado`);
+      onGroupDeleted();
     } catch (err) {
       setError(err.message || "Error al eliminar el grupo.");
     } finally {
@@ -91,13 +119,15 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
             </tr>
           </thead>
           <tbody>
-            {members.length === 0 ? (
+            {loadingMembers ? (
+              <tr><td colSpan="3" className="text-center text-muted py-4"><Spinner size="sm" animation="border" className="me-2" /> Cargando miembros...</td></tr>
+            ) : membersInfo.length === 0 ? (
               <tr><td colSpan="3" className="text-center text-muted py-4">No hay miembros en el grupo aún</td></tr>
             ) : (
-              members.map((member) => (
-                <tr key={member.wallet}>
+              membersInfo.map((member) => (
+                <tr key={member.wallet || member.uid}>
                   <td><strong>{member.userName}</strong></td>
-                  <td><code className="small">{member.wallet.substring(0, 15)}...</code></td>
+                  <td><code className="small">{member.wallet ? member.wallet.substring(0, 15) : 'N/A'}...</code></td>
                   <td className="text-end">
                     <Button 
                       variant="link" 
@@ -115,7 +145,7 @@ const GroupManagement = ({ groupName, members, onRemoveSuccess }) => {
         </Table>
         <hr />
         <div className="d-flex justify-content-end">
-          <Button variant="outline-danger" onClick={handleDeleteGroup} disabled={isSubmitting}>
+          <Button variant="outline-danger" onClick={() => handleDeleteGroup()} disabled={isSubmitting}>
             {isSubmitting ? <Spinner size="sm" animation="border" /> : "Eliminar Grupo"}
           </Button>
         </div>

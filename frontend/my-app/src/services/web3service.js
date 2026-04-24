@@ -380,7 +380,7 @@ export const Web3Service = {
         try {
             const groupId = await contract.getGroupIdByUserWallet(window.ethereum.selectedAddress);
             if (groupId.toString() === "0") {
-                return null; // El usuario no pertenece a ningún grupo
+                return null;
             }
             const groupData = await contract.getGroupById(groupId);
             return {
@@ -395,6 +395,38 @@ export const Web3Service = {
             console.error("Error fetching actual group:", error);
             throw error;
         }
+    },
+
+    getMembersInfo: async (memberIds) => {
+        const contract = await getContract('USERS', true);
+        const members = [];
+        
+        for (const memberId of memberIds) {
+            try {
+                const userData = await contract.getUserById(memberId);
+                const cid = userData.userInfoCID;
+                let userInfo = { userName: "Usuario Desconocido", email: "" };
+                
+                if (cid && cid !== "N/A" && cid !== "") {
+                    userInfo = await fetchFromIPFS(cid);
+                    if (userInfo.error) {
+                        userInfo = { userName: "Usuario Desconocido", email: "" };
+                    }
+                }
+                
+                members.push({
+                    uid: memberId,
+                    wallet: userData.wallet,
+                    userName: userInfo.userName,
+                    email: userInfo.email,
+                    isBanned: userData.isBanned
+                });
+            } catch (err) {
+                console.warn(`Error fetching user ${memberId}:`, err);
+            }
+        }
+        
+        return members;
     },
 
     createBugReport: async (title, description, proofs, pinataJwt = null) => {
