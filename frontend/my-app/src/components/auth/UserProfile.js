@@ -13,6 +13,9 @@ const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
     try {
       await Web3Service.deleteUser();
       
+      // Espera un poco para asegurar que la transacción se confirme
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setShowModal(false);
       if (onDeleteProfileSuccess) {
         onDeleteProfileSuccess();

@@ -40,7 +40,7 @@ contract Incidences {
         incidenceCount++;
         incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID);
         if (keccak256(abi.encodePacked(userReceiverHash)) != keccak256(abi.encodePacked(""))) {
-            uint userId = users.getIdByUserName(senderNameHash);
+            uint userId = users.getIdByUserName(userReceiverHash);
             userRToIncidenceIds[userId].push(incidenceCount);
         }
         else if (keccak256(abi.encodePacked(groupReceiverHash)) != keccak256(abi.encodePacked(""))) {
@@ -53,11 +53,11 @@ contract Incidences {
 
     function userViewIndividualIncidences() public view returns (Incidence[] memory) {
         uint userId = users.getIdByWallet(msg.sender); 
-        Incidence[] memory resultIncidences;
         require(userRToIncidenceIds[userId].length > 0, "No tienes incidencias asignadas");
         uint[] memory result = userRToIncidenceIds[userId];
-        for (uint i=1; i<result.length; i++) {
-            resultIncidences[i-1] = incidences[result[i-1]];
+        Incidence[] memory resultIncidences = new Incidence[](result.length);
+        for (uint i=0; i<result.length; i++) {
+            resultIncidences[i] = incidences[result[i]];
         }
         return resultIncidences;
     }
@@ -65,11 +65,11 @@ contract Incidences {
     function userViewGroupIncidences() public view returns (Incidence[] memory) {
         require(groups.getGroupIdByUserWallet(msg.sender) != 0, "No eres miembro de ningun grupo"); 
         uint groupId = groups.getGroupIdByUserWallet(msg.sender);
-        Incidence[] memory resultIncidences = new Incidence[](groupRToIncidenceIds[groupId].length);
         require(groupRToIncidenceIds[groupId].length > 0, "No tienes incidencias asignadas"); 
         uint[] memory result = groupRToIncidenceIds[groupId];
-        for (uint i=1; i<result.length; i++) {
-            resultIncidences[i-1] = incidences[result[i]];
+        Incidence[] memory resultIncidences = new Incidence[](result.length);
+        for (uint i=0; i<result.length; i++) {
+            resultIncidences[i] = incidences[result[i]];
         }
         return resultIncidences;
     }

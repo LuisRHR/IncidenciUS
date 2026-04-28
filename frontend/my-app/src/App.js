@@ -112,6 +112,13 @@ function App() {
         setUserGroup(updatedGroup);
         setAllMembers(updatedGroup.members);
         localStorage.setItem('userGroup', JSON.stringify(updatedGroup));
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (removedUserName === user?.userName) {
+          setView("dashboard");
+        }
+        else{
+          setView("manage-members");
+        }
       }
     } catch (error) {
       console.error("Error actualizando grupo después de expulsar usuario:", error);
@@ -119,10 +126,11 @@ function App() {
   };
 
   // Handler para cuando se elimina el grupo
-  const handleGroupDeleted = () => {
+  const handleGroupDeleted = async () => {
     setUserGroup(null);
     setAllMembers([]);
     localStorage.removeItem('userGroup');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     setView('dashboard');
   };
 

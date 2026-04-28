@@ -28,8 +28,8 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
         priorityNum,
         userReceiver,
         groupReceiver,
-        null,
-        incidenceDate
+        incidenceDate,
+        user.userName
       );
 
       onSubmit();
@@ -88,11 +88,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
               {targetType === 'user' ? (
                 <Form.Control type="text" placeholder="Nombre del usuario..." value={targetName} onChange={(e) => setTargetName(e.target.value)} required/>
                 ) : (
-
-                <Form.Select value={targetName} onChange={(e) => setTargetName(e.target.value)} required>
-                  <option value="">Selecciona un grupo...</option>
-                  {groups.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
-                </Form.Select>
+                <Form.Control type="text" placeholder="Nombre del grupo..." value={targetName} onChange={(e) => setTargetName(e.target.value)} required/>
               )}
             </Form.Group>
 

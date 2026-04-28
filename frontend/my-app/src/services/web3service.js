@@ -1,14 +1,5 @@
 import { ethers } from 'ethers';
 
-// Direcciones de los contratos (las actuales son las obtenidas al desplegar en localhost)
-const CONTRACT_ADDRESSES = {
-    USERS: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    GROUPS: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    REPORTS: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    INCIDENCES: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    ADMIN_REQUESTS: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-};
-
 // ABI de los contratos 
 const USERS_ABI = [
     "function registerUser(string memory userNameHashed, string memory emailHashed, string memory userInfoCID) public",
@@ -56,16 +47,16 @@ const ADMIN_REQUESTS_ABI = [
 ];
 
 // Constantes para IPFS, configurar en otro momento si se quiere usar un servicio real de IPFS, por ahora se usan mocks para facilitar el desarrollo sin necesidad de una conexión real a IPFS
-const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs/";
-const IPFS_UPLOAD_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
+const IPFS_GATEWAY = process.env.REACT_APP_IPFS_GATEWAY
+const IPFS_UPLOAD_URL = process.env.REACT_APP_IPFS_UPLOAD_URL;
 
-
+const PINATA_JWT = process.env.REACT_APP_PINATA_JWT
 
 const getContract = async (contractType, withSigner = false) => {
     if (!window.ethereum) throw new Error("MetaMask no detectado");
     
     const provider = new ethers.BrowserProvider(window.ethereum);
-    const contractAddress = CONTRACT_ADDRESSES[contractType];
+    const contractAddress = process.env[`REACT_APP_${contractType}_CONTRACT`];    
     if (!contractAddress) {
         throw new Error(`La  dirección del contrato ${contractType} no está configurada. Por favor, actualiza CONTRACT_ADDRESSES en web3Service.js`);
     }
@@ -151,8 +142,8 @@ const fetchFromIPFS = async (cid) => {
             return { error: "Mock CID data not found in local storage" };
         }
 
-        // Para CIDs reales, intentar traer de IPFS gateway
-        const response = await fetch(`${IPFS_GATEWAY}${cid}`);
+        const gatewayUrl = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
+        const response = await fetch(`${gatewayUrl}${cid}`);
         if (!response.ok) {
             throw new Error(`Fallo al recuperar información de IPFS: ${response.statusText}`);
         }
@@ -177,6 +168,7 @@ export const Web3Service = {
         try {
             const userBC = await contract.login();
             const cid = userBC.userInfoCID;
+            console.log("CID recuperado de la Blockchain:", cid); // Mira qué sale aquí
             let ipfsData = { userName: "Usuario Desconocido", email: "" }; // Valores por defecto
             if (cid && cid !== "N/A" && cid !== "") {
                 ipfsData = await fetchFromIPFS(cid);
@@ -205,7 +197,7 @@ export const Web3Service = {
         }
     },
 
-    register: async (userName, email, pinataJwt = null) => {
+    register: async (userName, email) => {
         const contract = await getContract('USERS', true);
         
         try {
@@ -213,7 +205,7 @@ export const Web3Service = {
                 userName: userName,
                 email: email
             };
-            const cid = await uploadToIPFS(userInfoData, pinataJwt);
+            const cid = await uploadToIPFS(userInfoData, PINATA_JWT);
             
             const userNameHash = hashValue(userName);
             const emailHash = hashValue(email);
@@ -355,7 +347,6 @@ export const Web3Service = {
     deleteGroup: async () => {
         const contract = await getContract('GROUPS', true);
         try {
-            //Esta opción todavia no está implementada en el frontend, pero la dejo aquí para tenerla lista cuando se quiera implementar. En este caso, no es necesario hacer nada con IPFS porque la eliminación del grupo es solo un cambio de estado en el contrato y es pública, no hay datos privados que ocultar. El contrato simplemente elimina la información del grupo de su almacenamiento, por lo que no requiere ninguna acción adicional relacionada con IPFS.
             const tx = await contract.deleteGroup();
             return await tx.wait();
         } catch (error) {
@@ -429,7 +420,7 @@ export const Web3Service = {
         return members;
     },
 
-    createBugReport: async (title, description, proofs, pinataJwt = null) => {
+    createBugReport: async (title, description, proofs) => {
         const contract = await getContract('REPORTS', true);
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -442,7 +433,7 @@ export const Web3Service = {
                 description: description,
                 proofs: proofs
             };
-            const cid = await uploadToIPFS(reportData, pinataJwt);
+            const cid = await uploadToIPFS(reportData, PINATA_JWT);
 
             const senderHash = hashValue(senderAddress);
             const titleHash = hashValue(title);
@@ -458,7 +449,7 @@ export const Web3Service = {
     },
 
 
-    createUserReport: async (userNameToReport, email, description, proofs, pinataJwt = null) => {
+    createUserReport: async (userNameToReport, email, description, proofs) => {
         const contract = await getContract('REPORTS', true);
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -471,7 +462,7 @@ export const Web3Service = {
                 description: description,
                 proofs: proofs
             };
-            const cid = await uploadToIPFS(reportData, pinataJwt);
+            const cid = await uploadToIPFS(reportData, PINATA_JWT);
 
             const senderHash = hashValue(senderAddress);
             const descriptionHash = hashValue(description);
@@ -539,26 +530,24 @@ export const Web3Service = {
     },
 
 
-    registerIncidence: async (title, description, priority, userReceiver = "", groupReceiver = "", pinataJwt = null, userDate = "") => {
+    registerIncidence: async (title, description, priority, userReceiver = "", groupReceiver = "", userDate = "", senderUserName = "") => {
         const contract = await getContract('INCIDENCES', true);
         try {
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const senderAddress = await signer.getAddress();
-
+            
             const incidenceData = {
                 title: title,
                 description: description,
-                userReceiver: userReceiver,
-                groupReceiver: groupReceiver,
                 priority: priority,
-                createdAt: userDate || new Date().toISOString().split('T')[0] // Usa la fecha proporcionada por el usuario o la fecha actual si no se proporciona
+                createdAt: userDate,
+                senderUserName: senderUserName,
+                userReceiver: userReceiver,
+                groupReceiver: groupReceiver
             };
-            const cid = await uploadToIPFS(incidenceData, pinataJwt);
+            const cid = await uploadToIPFS(incidenceData, PINATA_JWT);
 
             const titleHash = hashValue(title);
             const descriptionHash = hashValue(description);
-            const senderNameHash = hashValue(senderAddress);
+            const senderNameHash =  hashValue(senderUserName);
             const userReceiverHash = userReceiver ? hashValue(userReceiver) : "";
             const groupReceiverHash = groupReceiver ? hashValue(groupReceiver) : "";
             const date = userDate || new Date().toISOString().split('T')[0];
@@ -583,26 +572,44 @@ export const Web3Service = {
     getUserIncidences: async () => {
         const contract = await getContract('INCIDENCES', false);
         try {
+            console.log("Obteniendo incidencias del usuario...");
             const incidencesBC = await contract.userViewIndividualIncidences();
+            console.log("Incidencias recibidas del contrato:", incidencesBC);
+            
+            if (!incidencesBC || incidencesBC.length === 0) {
+                console.log("No hay incidencias");
+                return [];
+            }
             
             const incidences = await Promise.all(
-                incidencesBC.map(async (inc) => {
-                    const ipfsData = await fetchFromIPFS(inc.privateDataCID);
-                    return {
-                        id: Number(inc.id),
-                        title: ipfsData.title || "Sin título",
-                        description: ipfsData.description || "",
-                        priority: inc.priorityLevel,
-                        date: inc.date,
-                        cid: inc.privateDataCID,
-                        ...ipfsData
-                    };
+                incidencesBC.map(async (inc, index) => {
+                    try {
+                        console.log(`Procesando incidencia ${index}:`, inc);
+                        const ipfsData = await fetchFromIPFS(inc.privateDataCID);
+                        console.log(`Datos IPFS para incidencia ${index}:`, ipfsData);
+                        
+                        return {
+                            id: Number(inc.id),
+                            title: ipfsData.title || "Sin título",
+                            description: ipfsData.description || "",
+                            priority: inc.priorityLevel,
+                            date: inc.date,
+                            cid: inc.privateDataCID,
+                            ...ipfsData
+                        };
+                    } catch (err) {
+                        console.error(`Error procesando incidencia ${index}:`, err);
+                        return null;
+                    }
                 })
             );
             
-            return incidences;
+            const validIncidences = incidences.filter(inc => inc !== null);
+            console.log("Incidencias procesadas:", validIncidences);
+            return validIncidences;
         } catch (error) {
             console.error("Error getting user incidences:", error);
+            console.error("Error details:", error.message);
             return [];
         }
     },
@@ -610,26 +617,44 @@ export const Web3Service = {
     getGroupIncidences: async () => {
         const contract = await getContract('INCIDENCES', false);
         try {
+            console.log("Obteniendo incidencias del grupo...");
             const incidencesBC = await contract.userViewGroupIncidences();
+            console.log("Incidencias del grupo recibidas del contrato:", incidencesBC);
+            
+            if (!incidencesBC || incidencesBC.length === 0) {
+                console.log("No hay incidencias de grupo");
+                return [];
+            }
             
             const incidences = await Promise.all(
-                incidencesBC.map(async (inc) => {
-                    const ipfsData = await fetchFromIPFS(inc.privateDataCID);
-                    return {
-                        id: Number(inc.id),
-                        title: ipfsData.title || "Sin título",
-                        description: ipfsData.description || "",
-                        priority: inc.priorityLevel,
-                        date: inc.date,
-                        cid: inc.privateDataCID,
-                        ...ipfsData
-                    };
+                incidencesBC.map(async (inc, index) => {
+                    try {
+                        console.log(`Procesando incidencia de grupo ${index}:`, inc);
+                        const ipfsData = await fetchFromIPFS(inc.privateDataCID);
+                        console.log(`Datos IPFS para incidencia de grupo ${index}:`, ipfsData);
+                        
+                        return {
+                            id: Number(inc.id),
+                            title: ipfsData.title || "Sin título",
+                            description: ipfsData.description || "",
+                            priority: inc.priorityLevel,
+                            date: inc.date,
+                            cid: inc.privateDataCID,
+                            ...ipfsData
+                        };
+                    } catch (err) {
+                        console.error(`Error procesando incidencia de grupo ${index}:`, err);
+                        return null;
+                    }
                 })
             );
             
-            return incidences;
+            const validIncidences = incidences.filter(inc => inc !== null);
+            console.log("Incidencias de grupo procesadas:", validIncidences);
+            return validIncidences;
         } catch (error) {
             console.error("Error getting group incidences:", error);
+            console.error("Error details:", error.message);
             return [];
         }
     },

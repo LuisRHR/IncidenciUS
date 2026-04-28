@@ -76,7 +76,11 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
     setIsSubmitting(true);
     setError(null);
     try {
-      await Web3Service.deleteGroup(groupName);
+      await Web3Service.deleteGroup();
+      
+      // Espera un poco para asegurar que la transacción se confirme
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setSuccess(`Grupo ${groupName} eliminado exitosamente.`);
       onGroupDeleted();
     } catch (err) {
