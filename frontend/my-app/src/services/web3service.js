@@ -423,6 +423,7 @@ export const Web3Service = {
         try {
             // Prepara los datos para IPFS (toda la información sensible o muy costosa de almacenar en blockchain se guarda en IPFS, y solo se guarda el hash de esa información en el contrato para referencia)
             const reportData = {
+                userSender: userSender,
                 title: title,
                 description: description,
                 proofs: proofs
@@ -447,6 +448,7 @@ export const Web3Service = {
         const contract = await getContract('REPORTS', true);
         try {
             const reportData = {
+                userSender: userSender,
                 userNameReported: userNameToReport,
                 email: email,
                 description: description,
@@ -527,7 +529,7 @@ export const Web3Service = {
                     return {
                         id: Number(report.id),
                         type: 'USER_REPORT',
-                        sender: ipfsData.sender,
+                        sender: ipfsData.userSender,
                         userNameReported: ipfsData.userNameReported,
                         email: ipfsData.email,
                         description: ipfsData.description,

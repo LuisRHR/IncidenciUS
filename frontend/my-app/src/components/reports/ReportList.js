@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Table, Badge, Card, Container, Button, Spinner, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
@@ -7,40 +7,54 @@ const ReportList = ({ onDecline }) => {
     const [success, setSuccess] = useState(null);
     const [reports, setReports] = useState([]);
     const [processingId, setProcessingId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const loadReports = useCallback(async () => {
+        setIsLoading(true); // Empezamos a cargar
+        setError(null);
         try {
             const [bugReps, userReps] = await Promise.all([
                 Web3Service.viewSortedBugReports(),
                 Web3Service.viewSortedUserReports()
             ]);
-            const allReports = [...bugReps, ...userReps];
-            
-            // Ordenamos por ID descendente (los más nuevos primero) ya que timestamp no existe
-            allReports.sort((a, b) => b.id - a.id);
 
-            setReports(allReports => allReports.filter(r => r.id!==0));
+            // Combinamos y filtramos IDs inválidos (0) de una vez
+            const allReports = [...bugReps, ...userReps].filter(r => r && Number(r.id) !== 0);
+            
+            // Ordenamos por ID descendente
+            allReports.sort((a, b) => Number(b.id) - Number(a.id));
+
+            setReports(allReports); // Seteamos el array procesado directamente
         } catch (err) {
             console.error("Error loading reports:", err);
-            setError("Error al cargar los reportes.");
+            setError("Error al conectar con la Blockchain para obtener reportes.");
             setReports([]);
+        } finally {
+            setIsLoading(false); // Terminamos de cargar
         }
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         loadReports();
     }, [loadReports]);
 
 
     const handleAcceptUserReport = async (report) => {
-        if (!window.confirm(`¿Bloquear a ${report.targetUserName}?`)) return;
+        const nameToBlock = report.userNameReported; 
+        
+        if (!nameToBlock) {
+            setError("No se encontró el nombre del usuario en el reporte.");
+            return;
+        }
+
+        if (!window.confirm(`¿Bloquear a ${nameToBlock}?`)) return;
         
         setProcessingId(report.id);
         try {
-            await Web3Service.blockUser(report.targetUserName); 
+            await Web3Service.blockUser(nameToBlock); 
             await Web3Service.removeUserReport(report.id);
             
-            setSuccess("Usuario bloqueado y reporte archivado.");
+            setSuccess("Usuario bloqueado correctamente.");
             loadReports();
         } catch (err) {
             setError("Error: " + err.message);
@@ -104,7 +118,7 @@ const ReportList = ({ onDecline }) => {
                                             {rep.type === 'BUG_REPORT' ? 'BUG' : 'USUARIO'}
                                         </Badge>
                                     </td>
-                                    <td><code className="small">{rep.sender || 'N/A'}</code></td>
+                                    <td><code className="small">{rep.sender}</code></td>
                                     <td>
                                         <strong>{rep.type === 'BUG_REPORT' ? rep.title : rep.userNameReported}</strong>
                                         {rep.type === 'USER_REPORT' && rep.email && <div className="small text-muted">{rep.email}</div>}
@@ -144,3 +158,4 @@ const ReportList = ({ onDecline }) => {
 };
 
 export default ReportList;
+

@@ -41,6 +41,7 @@ function App() {
         setView('welcome');
         return;
       }
+      // para engañar al sistema
       userData.role='Admin de Sistema';
       setUser(userData);
         try {

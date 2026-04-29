@@ -65,7 +65,7 @@ const Register = ({ wallet, onSuccess }) => {
 
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3" controlId="formUserName">
-                            <Form.Label className="fw-bold small text-secondary">Nombre de Usuario (RI-02)</Form.Label>
+                            <Form.Label className="fw-bold small text-secondary">Nombre de Usuario</Form.Label>
                             <Form.Control
                                 type="text"
                                 placeholder="Ej: Juan_Dev"
@@ -77,7 +77,7 @@ const Register = ({ wallet, onSuccess }) => {
                         </Form.Group>
 
                         <Form.Group className="mb-4" controlId="formEmail">
-                            <Form.Label className="fw-bold small text-secondary">Email Corporativo (RI-02)</Form.Label>
+                            <Form.Label className="fw-bold small text-secondary">Email Corporativo</Form.Label>
                             <Form.Control
                                 type="email"
                                 placeholder="usuario@informatica.us.es"
