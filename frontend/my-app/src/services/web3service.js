@@ -5,7 +5,7 @@ const USERS_ABI = [
     "function registerUser(string memory userNameHashed, string memory emailHashed, string memory userInfoCID) public",
     "function login() public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
     "function deleteUser() public",
-    "function giveUserAdminStatus() public",
+    "function giveUserAdminStatus(address userAddress) public",    
     "function blockUser(string memory userNameHashed) public",
     "function getActualUser() public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
     "function getIdByWallet(address wallet) public view returns (uint)",
@@ -31,13 +31,16 @@ const REPORTS_ABI = [
     "function createBugReport(string memory senderHashed, string memory descriptionHashed, string memory titleHashed, string memory hashProofs, string memory userReportCID) public",
     "function createUserReport(string memory senderHashed, string memory descriptionHashed, string memory userNameHashed, string memory emailHashed, string memory hashProofs, string memory userReportCID) public",
     "function viewSortedBugReports() public view returns (tuple(uint id, string senderHash, string descriptionHash, string hashProofs, string titleHash, string userReportCID)[])",
-    "function viewSortedUserReports() public view returns (tuple(uint id, string senderHash, string descriptionHash, string hashProofs, string userNameHash, string emailHash, string userReportCID)[])"
+    "function viewSortedUserReports() public view returns (tuple(uint id, string senderHash, string descriptionHash, string hashProofs, string userNameHash, string emailHash, string userReportCID)[])",
+    "function removeBugReport(uint requestId) public",
+    "function removeUserReport(uint requestId) public"
 ];
 
 const INCIDENCES_ABI = [
     "function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, uint8 priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiverHash, string memory privateDataCID) public",
     "function userViewIndividualIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])",
-    "function userViewGroupIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])"
+    "function userViewGroupIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])",
+    "function removeRequest(uint requestId) public"
 ];
 
 const ADMIN_REQUESTS_ABI = [
@@ -283,16 +286,11 @@ export const Web3Service = {
         }
     },
 
-    giveUserAdminStatus: async () => {
+    giveUserAdminStatus: async (userAddress) => {
         const contract = await getContract('USERS', true);
-        try {
-            const tx = await contract.giveUserAdminStatus();
-            // No hace falta hacer nada con IPFS aquí porque el cambio de rol es solo un cambio de estado en el contrato y es público
-            return await tx.wait();
-        } catch (error) {
-            console.error("Error giving admin status:", error);
-            throw error;
-        }
+        // Enviamos la dirección del usuario al contrato
+        const tx = await contract.giveUserAdminStatus(userAddress);
+        return await tx.wait();
     },
 
     createGroup: async (groupName, description = "") => {
@@ -420,13 +418,9 @@ export const Web3Service = {
         return members;
     },
 
-    createBugReport: async (title, description, proofs) => {
+    createBugReport: async (userSender, title, description, proofs) => {
         const contract = await getContract('REPORTS', true);
         try {
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const senderAddress = await signer.getAddress();
-
             // Prepara los datos para IPFS (toda la información sensible o muy costosa de almacenar en blockchain se guarda en IPFS, y solo se guarda el hash de esa información en el contrato para referencia)
             const reportData = {
                 title: title,
@@ -435,7 +429,7 @@ export const Web3Service = {
             };
             const cid = await uploadToIPFS(reportData, PINATA_JWT);
 
-            const senderHash = hashValue(senderAddress);
+            const senderHash = hashValue(userSender);
             const titleHash = hashValue(title);
             const descriptionHash = hashValue(description);
             const proofsHash = hashValue(proofs);
@@ -449,13 +443,9 @@ export const Web3Service = {
     },
 
 
-    createUserReport: async (userNameToReport, email, description, proofs) => {
+    createUserReport: async (userSender,userNameToReport, email, description, proofs) => {
         const contract = await getContract('REPORTS', true);
         try {
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const senderAddress = await signer.getAddress();
-
             const reportData = {
                 userNameReported: userNameToReport,
                 email: email,
@@ -464,7 +454,7 @@ export const Web3Service = {
             };
             const cid = await uploadToIPFS(reportData, PINATA_JWT);
 
-            const senderHash = hashValue(senderAddress);
+            const senderHash = hashValue(userSender);
             const descriptionHash = hashValue(description);
             const userNameHash = hashValue(userNameToReport);
             const emailHash = hashValue(email);
@@ -488,6 +478,7 @@ export const Web3Service = {
                     const ipfsData = await fetchFromIPFS(report.userReportCID);
                     return {
                         id: Number(report.id),
+                        type: 'BUG_REPORT',
                         sender: ipfsData.sender,
                         title: ipfsData.title,
                         description: ipfsData.description,
@@ -504,6 +495,28 @@ export const Web3Service = {
         }
     },
 
+    removeUserReport: async (reportId) => {
+        try {
+            const contract = await getContract('REPORTS', true);
+            const tx = await contract.removeUserReport(reportId);
+            return await tx.wait();
+        } catch (error) {
+            console.error("Error al eliminar reporte de usuario:", error);
+            throw error;
+        }
+    },
+
+    removeBugReport: async (reportId) => {
+        try {
+            const contract = await getContract('REPORTS', true);
+            const tx = await contract.removeBugReport(reportId);
+            return await tx.wait();
+        } catch (error) {
+            console.error("Error al eliminar reporte de bug:", error);
+            throw error;
+        }
+    },
+
     viewSortedUserReports: async () => {
         const contract = await getContract('REPORTS', false);
         try {
@@ -512,6 +525,8 @@ export const Web3Service = {
                 reportsBC.map(async (report) => {
                     const ipfsData = await fetchFromIPFS(report.userReportCID);
                     return {
+                        id: Number(report.id),
+                        type: 'USER_REPORT',
                         sender: ipfsData.sender,
                         userNameReported: ipfsData.userNameReported,
                         email: ipfsData.email,

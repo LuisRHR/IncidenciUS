@@ -14,26 +14,23 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return; // Evita doble envío manual
+
         setIsSubmitting(true);
         setError(null);
         
         try {
-            let result;
-            
             if (reportType === 'bug') {
-                result = await Web3Service.createBugReport(title, description, proofs);
+                await Web3Service.createBugReport(user.userName, title, description, proofs);
             } else {
-                result = await Web3Service.createUserReport(targetUserName, targetEmail, description, proofs);
+                await Web3Service.createUserReport(user.userName, targetUserName, targetEmail, description, proofs);
             }
-
-            onSubmit();
+            onSubmit(); 
         } catch (err) {
-            setError(err.message || "Error al enviar el reporte. Intenta de nuevo.");
-        } finally {
-            setIsSubmitting(false);
+            setError(err.message);
+            setIsSubmitting(false); // Solo reactivar si falló
         }
     };
-
     return (
         <Card className="shadow-sm border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '600px' }}>
             <div className="text-center mb-4">

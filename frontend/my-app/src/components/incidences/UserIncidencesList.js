@@ -157,7 +157,7 @@ const UserIncidencesList = ({ user, onCancel }) => {
                                     
                                     <ListGroup variant="flush" className="small bg-light rounded-3 border">
                                         <ListGroup.Item className="bg-transparent py-1">
-                                            <strong>De:</strong> <code className="text-primary">{inc.senderNameHash?.substring(0, 10) || 'Anónimo'}</code>
+                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}</code>
                                         </ListGroup.Item>
                                         <ListGroup.Item className="bg-transparent py-1">
                                             <strong>Para:</strong> {inc.userReceiver ? `Usuario: ${inc.userReceiver}` : inc.groupReceiver ? `Grupo: ${inc.groupReceiver}` : 'N/A'}

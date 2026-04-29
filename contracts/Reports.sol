@@ -83,4 +83,14 @@ contract Reports {
 
         return result;
     }
+
+    function removeBugReport(uint requestId) public {
+    require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
+    delete bugReports[requestId];
+    }
+
+    function removeUserReport(uint requestId) public {
+        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
+        delete userReports[requestId];
+    }
 }

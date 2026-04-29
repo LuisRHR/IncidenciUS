@@ -50,9 +50,10 @@ contract Users {
         return users[uid];
     }
 
-    function giveUserAdminStatus() public {
-        uint uid = walletToUid[msg.sender];
+    function giveUserAdminStatus(address userAddress) public {
+        uint uid = walletToUid[userAddress];
         require(uid != 0, "Usuario no registrado");
+        require(users[uid].condition!=userCondition.ADMINISTRADOR_SISTEMA, "El usuario ya es admin");
         users[uid].condition = userCondition.ADMINISTRADOR_SISTEMA;
     }
 

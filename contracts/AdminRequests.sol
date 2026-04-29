@@ -27,7 +27,7 @@ contract AdminRequests {
     }
 
      function viewRequests() public view returns (AdminRequest[] memory) {
-         AdminRequest[] memory requests;
+         AdminRequest[] memory requests = new AdminRequest[](requestCount);
             for (uint i=1; i<=requestCount; i++) {
                 requests[i-1] = adminRequests[i];
             }
@@ -35,8 +35,8 @@ contract AdminRequests {
      }
 
      function removeRequest(uint requestId) public {
-        // Esta función solo se usará exclusivamente cuando se haya usado primero 
-        // la función viewRequests y tras elegir si el usuario es apto o no para ser admin
-         delete adminRequests[requestId];
-     }
+        address user = adminRequests[requestId].userWallet;
+        delete walletToRequestId[user]; // IMPORTANTE: Permitir nueva solicitud
+        delete adminRequests[requestId];
+    }
 }

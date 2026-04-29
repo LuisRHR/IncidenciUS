@@ -29,10 +29,21 @@ function App() {
 
   const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
-    if (userData && userData.exists) {
+    try{
+      if (!userData || userData.exists === false) {
+        alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
+        setView('register');
+        return;
+      }
+      if (userData.isBanned === true) {
+        alert("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por un administrador.");
+        setUser(null);
+        setView('welcome');
+        return;
+      }
+      userData.role='Admin de Sistema';
       setUser(userData);
-      setView('dashboard');
-      try {
+        try {
         let dataGroup = await Web3Service.getActualGroup();
         if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
           setUserGroup(dataGroup);
@@ -41,12 +52,11 @@ function App() {
       } catch (error) {
         console.error("Error al obtener información del grupo:", error);
       }
-    } else {
-      alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
-      setView('register');
-    }
+      setView('dashboard');
+      } catch (error) {
+        console.error("Error al obtener información del grupo:", error);
+      } 
   };
-
 
   const handleRegisterSuccess = (userData) => {
     alert("Registro exitoso. Ahora puedes iniciar sesión con tu wallet.");

@@ -17,14 +17,12 @@ const Login = ({ onConnect }) => {
 
                 const userData = await Web3Service.login();
 
-                // Se ha añadido la logica de usuario baneado a la blockchain, ahora no es necesario hacer esta comprobación de usuario baneado
-                if (userData.exists) {
-                    /*
+                if (userData && userData.exists) { // Verificación segura
                     if (userData.isBanned) {
-                        setError("Esta cuenta ha sido bloqueada.");
+                        setError("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por la administración.");
                         setIsConnecting(false);
-                        return;
-                    }*/
+                        return; 
+                    }
                     onConnect(address, userData); 
                 } else {
                     onConnect(address, null); 
