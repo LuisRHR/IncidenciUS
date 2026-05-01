@@ -57,10 +57,11 @@ contract Reports {
     function viewSortedBugReports() public view returns (BugReport[] memory) {
         BugReport[] memory result = new BugReport[](reportCount);
         uint count = 0;
-        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
-        for (uint i = reportCount; i>0; i--) {
-            // Si existe un bugReport con ese id, lo añadimos al resultado
-            if (bugReports[i].id!=0) { 
+        uint userId = users.getIdByWallet(msg.sender);
+        Users.userCondition condition = users.getUserById(userId).condition;
+        require(condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");        for (uint i = reportCount; i>0; i--) {
+            // Si existe un bugReport con ese id, lo añadimos al resultado, además evitar confundirlo con un userReport por un error que sucedia.
+            if (bugReports[i].id!=0 || userReports[i].id!=0) { 
                 result[count] = bugReports[i];
                 count++;
             }
@@ -72,10 +73,11 @@ contract Reports {
     function viewSortedUserReports() public view returns (UserReport[] memory) {
         UserReport[] memory result = new UserReport[](reportCount);
         uint count = 0;
-        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ver los reportes de bugs");
-        for (uint i = reportCount; i>0; i--) {
+        uint userId = users.getIdByWallet(msg.sender);
+        Users.userCondition condition = users.getUserById(userId).condition;
+        require(condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");        for (uint i = reportCount; i>0; i--) {
             // Si existe un userReport con ese id, lo añadimos al resultado
-            if (userReports[i].id!=0) { 
+            if (userReports[i].id!=0 || bugReports[i].id!=0) { 
                 result[count] = userReports[i];
                 count++;
             }

@@ -12,7 +12,13 @@ const AdminRequestList = ({ onAcceptSuccess, onDecline }) => {
         setError(null);
         try {
             const reqs = await Web3Service.viewAdminRequests();
-            setRequests(reqs || []);
+            const cleanReqs = (reqs || []).filter(req => 
+                req && 
+                req.id !== undefined && 
+                req.id.toString() !== "0" && 
+                req.userWallet !== "0x0000000000000000000000000000000000000000"
+            );
+            setRequests(cleanReqs);
         } catch (err) {
             console.error("Error loading admin requests:", err);
             setError("Error al cargar las solicitudes de administrador. Intenta de nuevo.");
@@ -35,16 +41,29 @@ const AdminRequestList = ({ onAcceptSuccess, onDecline }) => {
         setSuccess(null);
         
         try {
-            await Web3Service.giveUserAdminStatus(req.userWallet); 
-            await Web3Service.removeAdminRequest(req.id);
-            
-            setSuccess(`Usuario ${req.userWallet.substring(0,8)}... ascendido a Administrador.`);
-            setRequests(prev => prev.filter(r => r.id !== req.id && req.id!==0));
-        } catch (err) {
-            console.error("Error en el proceso de ascenso:", err);
-            setError("Error en Blockchain: " + (err.message || "No se pudo completar el proceso"));
-        } finally {
-            setProcessingId(null);
+                console.log("Iniciando ascenso para wallet:", req.userWallet);
+                const tx1 = await Web3Service.giveUserAdminStatus(req.userWallet);
+                if (tx1 && tx1.wait) await tx1.wait();
+                    console.log("Éxito: Usuario ascendido en la Blockchain.");
+                    try {
+                        console.log("Iniciando eliminación de la petición ID:", req.id);
+                        const tx2 = await Web3Service.removeAdminRequest(req.id);
+                        if (tx2 && tx2.wait) await tx2.wait();
+                        console.log("Éxito: Petición eliminada.");
+                        
+                        setSuccess(`Proceso completo: Usuario ascendido y petición eliminada.`);
+                        setRequests(prev => prev.filter(r => r.id !== req.id && req.id!==0));
+                        
+                    } catch (errBorrado) {
+                        console.warn("Fallo al eliminar petición:", errBorrado);
+                        setSuccess(`Aviso: El usuario fue ascendido a Admin, pero hubo un error al borrar la petición de la lista (Revisa los permisos de tu Smart Contract).`);
+                }
+
+            } catch (errAscenso) {
+                console.error("Error en el proceso de ascenso:", errAscenso);
+                setError("Error en Blockchain al ascender: " + (errAscenso.message || "No se pudo completar el ascenso"));
+            } finally {
+                setProcessingId(null);
         }
     };
 

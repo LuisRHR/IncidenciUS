@@ -130,6 +130,27 @@ contract Groups {
         
     }
 
+    function deleteSelfUserFromGroup_WhenDeletingUser() public {
+        uint userId = users.getIdByWallet(msg.sender);
+        uint groupId =  walletToGroupId[msg.sender];
+        require(userId != 0, "Usuario a eliminar no registrado");
+
+        uint[] storage members = groups[groupId].members;
+        for (uint i = 0; i < members.length; i++) {
+            if (members[i] == userId) {
+                members[i] = members[members.length - 1];
+                members.pop();
+                delete walletToGroupId[users.getUserById(userId).wallet];
+                break;
+            }
+        }
+        // Si el usuario eliminado es el administrador, se asigna al primero del array como nuevo administrador
+        if (groups[groupId].admin == userId) {
+            groups[groupId].admin = members.length > 0 ? members[0] : 0; // Si no hay miembros, el grupo queda sin administrador
+        }
+        
+    }
+
     function deleteGroup() public {
         uint groupId = walletAdminToGroupId[msg.sender];
         require(groupId != 0, "No eres administrador de ningun grupo");

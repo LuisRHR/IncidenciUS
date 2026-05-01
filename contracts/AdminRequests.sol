@@ -29,6 +29,7 @@ contract AdminRequests {
      function viewRequests() public view returns (AdminRequest[] memory) {
          AdminRequest[] memory requests = new AdminRequest[](requestCount);
             for (uint i=1; i<=requestCount; i++) {
+                if (adminRequests[i].id != 0)
                 requests[i-1] = adminRequests[i];
             }
          return requests;

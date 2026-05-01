@@ -19,6 +19,7 @@ const GROUPS_ABI = [
     "function inviteUserToGroup(string memory userNameHashed) public",
     "function userJoined(string memory groupName) public",
     "function deleteUserFromGroup(string memory userNameHashed) public",
+    "function deleteSelfUserFromGroup_WhenDeletingUser() public",
     "function deleteGroup() public",
     "function getGroupMembers(uint groupId) public view returns (uint[] memory)",
     "function getGroupById(uint groupId) public view returns (tuple(string groupName, string description, uint[] members, uint[] invitedUsers, uint admin))",
@@ -37,7 +38,7 @@ const REPORTS_ABI = [
 ];
 
 const INCIDENCES_ABI = [
-    "function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, uint8 priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiverHash, string memory privateDataCID) public",
+    "function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, uint8 priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiver, string memory groupReceiverHash, string memory privateDataCID) public",
     "function userViewIndividualIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])",
     "function userViewGroupIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])",
     "function removeRequest(uint requestId) public"
@@ -167,12 +168,12 @@ const hashValue = (value) => {
 export const Web3Service = {
     
     login: async () => {
-        const contract = await getContract('USERS', true);  // Necesita signer para identificar al usuario
+        const contract = await getContract('USERS', true);  
         try {
             const userBC = await contract.login();
             const cid = userBC.userInfoCID;
-            console.log("CID recuperado de la Blockchain:", cid); // Mira qué sale aquí
-            let ipfsData = { userName: "Usuario Desconocido", email: "" }; // Valores por defecto
+            console.log("CID recuperado de la Blockchain:", cid); 
+            let ipfsData = { userName: "Usuario Desconocido", email: "" }; 
             if (cid && cid !== "N/A" && cid !== "") {
                 ipfsData = await fetchFromIPFS(cid);
                 // Si hay error en IPFS, mantén los valores por defecto
@@ -231,9 +232,11 @@ export const Web3Service = {
 
     deleteUser: async () => {
         const contract = await getContract('USERS', true);
+        const contractGroup = await getContract('GROUPS', true);
         try {
             const tx = await contract.deleteUser();
-            return await tx.wait();
+            const tx2 = await contractGroup.deleteSelfUserFromGroup_WhenDeletingUser();
+            return await tx.wait() && tx2.wait();
         } catch (error) {
             console.error("Error eliminando al usuario:", error);
             throw error;
@@ -576,6 +579,7 @@ export const Web3Service = {
                 priority,
                 senderNameHash,
                 userReceiverHash,
+                groupReceiver,
                 groupReceiverHash,
                 cid
             );

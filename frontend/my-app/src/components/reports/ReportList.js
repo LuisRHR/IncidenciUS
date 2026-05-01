@@ -50,14 +50,31 @@ const ReportList = ({ onDecline }) => {
         if (!window.confirm(`¿Bloquear a ${nameToBlock}?`)) return;
         
         setProcessingId(report.id);
+        setError(null);
+        setSuccess(null);
+        
         try {
-            await Web3Service.blockUser(nameToBlock); 
-            await Web3Service.removeUserReport(report.id);
-            
-            setSuccess("Usuario bloqueado correctamente.");
-            loadReports();
-        } catch (err) {
-            setError("Error: " + err.message);
+            console.log("Iniciando bloqueo del usuario:", nameToBlock);
+            const tx1 = await Web3Service.blockUser(nameToBlock); 
+            if (tx1 && tx1.wait) await tx1.wait();
+            console.log("Éxito: Usuario bloqueado.");
+            try {
+                console.log("Iniciando eliminación del reporte ID:", report.id);
+                const tx2 = await Web3Service.removeUserReport(report.id);
+                if (tx2 && tx2.wait) await tx2.wait();
+                console.log("Éxito: Reporte eliminado.");
+                
+                setSuccess("Proceso completo: Usuario bloqueado y reporte descartado.");
+                loadReports();
+                
+            } catch (errBorrado) {
+                console.warn("Fallo al eliminar reporte:", errBorrado);
+                setSuccess("Aviso: El usuario ha sido bloqueado con éxito, pero tu cuenta no tiene permisos para borrar el reporte de la lista.");
+            }
+
+        } catch (errBloqueo) {
+            console.error("Error al bloquear usuario:", errBloqueo);
+            setError("Error al bloquear: " + (errBloqueo.message || "La transacción falló"));
         } finally {
             setProcessingId(null);
         }
