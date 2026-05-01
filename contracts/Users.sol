@@ -14,7 +14,7 @@ contract Users {
         string userInfoCID;
     }
 
-    uint public userCount;
+    uint public userCount=1;
 
     mapping(uint => User) public users;
     mapping(address => uint) public walletToUid;
@@ -28,13 +28,14 @@ contract Users {
         require(emailToUid[emailHashed] == 0, "Usuario ya registrado con este correo");
         
         //Creamos el nuevo usuario
-        userCount++;
         uint uid = userCount;
         
         users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID);
         walletToUid[msg.sender] = uid;
         userNameToUid[userNameHashed] = uid;
         emailToUid[emailHashed] = uid;
+
+        userCount++;
     }
 
     function login() public view returns (User memory) {

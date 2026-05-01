@@ -31,8 +31,8 @@ const Register = ({ wallet, onSuccess }) => {
 
             const newUser = {
                 wallet,
-                userName: formData.userName,
-                email: formData.email,
+                userName: formData.userName.trim(),
+                email: formData.email.trim(),
                 role: "Comun",
                 condition: 0,
                 cid: result.cid,

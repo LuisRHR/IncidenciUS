@@ -13,7 +13,7 @@ contract Groups {
         uint admin;
     }
 
-    uint public groupCount;
+    uint public groupCount = 1;
     Users public users;
 
     // Creamos los grupos e instanciamos el contrato de usuarios para poder relacionar grupos y usuarios
@@ -31,7 +31,6 @@ contract Groups {
         require(groupNameToId[groupName] == 0, "Grupo ya existe con este nombre"); 
 
         // Creamos un nuevo grupo tras la verificación anterior
-        groupCount++;
         uint groupId = groupCount;
         uint adminId = users.getIdByWallet(msg.sender);
         // El usuario debería de haber iniciado sesión, pero se realiza esta verificación para asegurarnos de que el creador del grupo es un usuario registrado
@@ -44,6 +43,8 @@ contract Groups {
         groupNameToId[groupName] = groupId;
         walletAdminToGroupId[msg.sender] = groupId;
         walletToGroupId[msg.sender] = groupId;
+
+        groupCount++;
     }
 
     function inviteUserToGroup(string memory userNameHashed) public {

@@ -10,7 +10,7 @@ contract AdminRequests {
         string requestReason;
     }
 
-    uint public requestCount;
+    uint public requestCount=1;
 
     constructor() {
         
@@ -20,10 +20,10 @@ contract AdminRequests {
     mapping(address => uint) public walletToRequestId;
 
     function createAdminRequest(address userWallet, string memory requestReason) public {
-        requestCount++;
         require(walletToRequestId[userWallet] == 0, "Ya has enviado una solicitud de admin");
         adminRequests[requestCount] = AdminRequest(requestCount, userWallet, requestReason);
         walletToRequestId[userWallet] = requestCount;   
+        requestCount++;
     }
 
      function viewRequests() public view returns (AdminRequest[] memory) {

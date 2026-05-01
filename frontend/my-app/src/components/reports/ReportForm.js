@@ -21,9 +21,9 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
         
         try {
             if (reportType === 'bug') {
-                await Web3Service.createBugReport(user.userName, title, description, proofs);
+                await Web3Service.createBugReport(user.userName.trim(), title, description, proofs);
             } else {
-                await Web3Service.createUserReport(user.userName, targetUserName, targetEmail, description, proofs);
+                await Web3Service.createUserReport(user.userName.trim(), targetUserName.trim(), targetEmail.trim(), description, proofs);
             }
             onSubmit(); 
         } catch (err) {

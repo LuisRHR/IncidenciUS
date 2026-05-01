@@ -20,7 +20,7 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
                 return;
             }
 
-            const result = await Web3Service.createGroup(groupName, description);
+            const result = await Web3Service.createGroup(groupName.trim(), description);
 
             onCreateGroup();
         } catch (err) {

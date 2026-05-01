@@ -20,7 +20,7 @@ contract Incidences {
         string privateDataCID;
     }
     
-    uint public incidenceCount;
+    uint public incidenceCount=1;
 
     Users public users;
     Groups public groups;
@@ -35,25 +35,24 @@ contract Incidences {
     mapping (uint => uint[]) public userRToIncidenceIds;
     mapping (uint => uint[]) public groupRToIncidenceIds;
 
-    function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, priority priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiverHash, string memory privateDataCID) public {
-        // En la lógica de alto nivel debe de verificarse que el checkbox que se marque si el grupo es el destinatario, mande como senderName "" y que en caso contrario mande groupReceiver como "", así como que el usuario o grupo destinatario que sea en cada caso
-        incidenceCount++;
+    function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, priority priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiver, string memory groupReceiverHash, string memory privateDataCID) public{
         incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID);
         if (keccak256(abi.encodePacked(userReceiverHash)) != keccak256(abi.encodePacked(""))) {
             uint userId = users.getIdByUserName(userReceiverHash);
             userRToIncidenceIds[userId].push(incidenceCount);
         }
-        else if (keccak256(abi.encodePacked(groupReceiverHash)) != keccak256(abi.encodePacked(""))) {
-            uint groupId = groups.getIdByGroupName(groupReceiverHash);
+        else if (keccak256(abi.encodePacked(groupReceiver)) != keccak256(abi.encodePacked(""))) {
+            uint groupId = groups.getIdByGroupName(groupReceiver);
             groupRToIncidenceIds[groupId].push(incidenceCount);
         }
         uint senderId = users.getIdByUserName(senderNameHash);
         senderToIncidenceIds[senderId].push(incidenceCount);
+
+        incidenceCount++;
     }
 
     function userViewIndividualIncidences() public view returns (Incidence[] memory) {
         uint userId = users.getIdByWallet(msg.sender); 
-        require(userRToIncidenceIds[userId].length > 0, "No tienes incidencias asignadas");
         uint[] memory result = userRToIncidenceIds[userId];
         Incidence[] memory resultIncidences = new Incidence[](result.length);
         for (uint i=0; i<result.length; i++) {
@@ -65,7 +64,6 @@ contract Incidences {
     function userViewGroupIncidences() public view returns (Incidence[] memory) {
         require(groups.getGroupIdByUserWallet(msg.sender) != 0, "No eres miembro de ningun grupo"); 
         uint groupId = groups.getGroupIdByUserWallet(msg.sender);
-        require(groupRToIncidenceIds[groupId].length > 0, "No tienes incidencias asignadas"); 
         uint[] memory result = groupRToIncidenceIds[groupId];
         Incidence[] memory resultIncidences = new Incidence[](result.length);
         for (uint i=0; i<result.length; i++) {

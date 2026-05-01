@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav, NavDropdown, Container, Badge } from 'react-bootstrap';
 import { Web3Service } from './services/web3service';
@@ -26,6 +26,37 @@ function App() {
   const [userGroup, setUserGroup] = useState(null); 
   const [allMembers, setAllMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+
+  const refreshData = useCallback(async () => {
+      try {
+        if (window.ethereum && window.ethereum.selectedAddress) {
+          
+          const userData = await Web3Service.getActualUser(); 
+          
+          if (userData.isBanned) {
+            setUser(null);
+            setUserGroup(null);
+            return;
+          }
+          const groupData = await Web3Service.getActualGroup();
+
+          setUser(userData);
+          setUserGroup(groupData);
+        }
+      } catch (err) {
+        console.error("Error sincronizando con Blockchain:", err);
+      }
+    }, []);
+
+    useEffect(() => {
+      refreshData();
+      const interval = setInterval(() => {
+        refreshData();
+      }, 10000); 
+
+
+      return () => clearInterval(interval);
+    }, [refreshData]);
 
   const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
@@ -68,12 +99,13 @@ function App() {
     setUser(null);
     setWallet("");
     setUserGroup(null);
-
+    window.location.reload();
     setView('welcome');
 
   };
   // Muchos de estos handlers van a cambiar teniendo en cuenta que ahora no hay que actualizar el estado porque se encargara de mostrar las cosas las vistas, pero los dejo aquí para que se vea que se ha pensado en ello y no se ha dejado de lado, aunque ahora mismo no hagan nada
   const handleIncidenceSubmit = (newInc) => {
+    refreshData();
     setView('dashboard'); 
   };
 
@@ -107,10 +139,12 @@ function App() {
 
   // Estos handlers ahora solo actualizan el estado visual tras la acción del componente
   const handleReportSuccess = () => {
+    refreshData();
     setView('dashboard');
   };
 
   const handleAdminRequestSuccess = () => {
+    refreshData();
     setView('dashboard');
   };
 
@@ -252,7 +286,7 @@ function App() {
       <Container>
         {view === 'dashboard' && (
           <div className="bg-white p-5 rounded-4 shadow-sm border text-center">
-            <h2 className="display-6 fw-bold">Panel de Control</h2>
+            <h2 className="display-6 fw-bold">Panel de Control del usuario {user?.uid}</h2>
             <p className="text-muted">Bienvenido a la red descentralizada de IncidenciUS.</p>
           </div>
         )}
@@ -276,7 +310,7 @@ function App() {
         {view === 'report-form' && <ReportForm user={user} onSubmit={handleReportSuccess} onCancel={() => setView('dashboard')} />}
         {view === 'admin-request' && <AdminRequestForm user={user} wallet={wallet} onSubmit={handleAdminRequestSuccess} onCancel={() => setView('dashboard')} />}
         
-        {view === 'view-reports' && <ReportList onDecline={() => setView('dashboard')} />}
+        {view === 'view-reports' && user?.role === 'Admin de Sistema' && <ReportList onDecline={() => setView('dashboard')} />}
         {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
           <AdminRequestList onAcceptSuccess={() => setView('dashboard')} onDecline={() => setView('dashboard')} />
         )}

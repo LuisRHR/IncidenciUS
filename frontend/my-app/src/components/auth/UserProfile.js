@@ -34,7 +34,7 @@ const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
         <div className="bg-primary py-5 text-center text-white">
           <h3 className="mb-0">{user.userName}</h3>
           <Badge bg="light" text="dark" className="mt-2">
-            {user.role === 1 ? "ADMINISTRADOR DE SISTEMA" : "USUARIO COMÚN"}
+            {user.condition === 1 ? "ADMINISTRADOR DE SISTEMA" : "USUARIO COMÚN"}
           </Badge>
         </div>
         <Card.Body className="p-4">

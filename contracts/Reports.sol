@@ -32,7 +32,7 @@ contract Reports {
         string userReportCID;
     }
 
-    uint public reportCount;
+    uint public reportCount=1;
     Users public users;
 
     constructor(address usersAddress) {
@@ -43,15 +43,13 @@ contract Reports {
     mapping(uint => UserReport) public userReports;
 
     function createBugReport(string memory senderHashed, string memory descriptionHashed, string memory titleHashed, string memory hashProofs, string memory userReportCID) public {
-        reportCount++;
-
         bugReports[reportCount] = BugReport(reportCount, senderHashed, descriptionHashed, hashProofs, titleHashed, userReportCID);
+        reportCount++;
     }
 
     function createUserReport(string memory senderHashed, string memory descriptionHashed, string memory userNameHashed, string memory emailHashed, string memory hashProofs, string memory userReportCID) public {
-        reportCount++;
-
         userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
+        reportCount++;
     }
 
     function viewSortedBugReports() public view returns (BugReport[] memory) {

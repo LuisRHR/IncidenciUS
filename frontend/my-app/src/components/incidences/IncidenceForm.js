@@ -26,10 +26,10 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
         title,
         description,
         priorityNum,
-        userReceiver,
-        groupReceiver,
+        userReceiver.trim(),
+        groupReceiver.trim(),
         incidenceDate,
-        user.userName
+        user.userName.trim()
       );
 
       onSubmit();

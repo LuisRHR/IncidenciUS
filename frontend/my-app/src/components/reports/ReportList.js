@@ -17,11 +17,14 @@ const ReportList = ({ onDecline }) => {
                 Web3Service.viewSortedBugReports(),
                 Web3Service.viewSortedUserReports()
             ]);
+            const cleanBugReps = bugReps.filter(rep => 
+                rep && (rep.title || rep.description) && rep.cid !== "N/A"
+            );
 
-            // Combinamos y filtramos IDs inválidos (0) de una vez
-            const allReports = [...bugReps, ...userReps].filter(r => r && Number(r.id) !== 0);
-            
-            // Ordenamos por ID descendente
+            const cleanUserReps = userReps.filter(rep => 
+                rep && (rep.userNameReported || rep.email) && rep.cid !== "N/A"
+            );
+            const allReports = [...cleanBugReps, ...cleanUserReps];
             allReports.sort((a, b) => Number(b.id) - Number(a.id));
 
             setReports(allReports); // Seteamos el array procesado directamente
@@ -135,7 +138,7 @@ const ReportList = ({ onDecline }) => {
                                             {rep.type === 'BUG_REPORT' ? 'BUG' : 'USUARIO'}
                                         </Badge>
                                     </td>
-                                    <td><code className="small">{rep.sender}</code></td>
+                                    <td><code className="small">{rep.userSender}</code></td>
                                     <td>
                                         <strong>{rep.type === 'BUG_REPORT' ? rep.title : rep.userNameReported}</strong>
                                         {rep.type === 'USER_REPORT' && rep.email && <div className="small text-muted">{rep.email}</div>}
