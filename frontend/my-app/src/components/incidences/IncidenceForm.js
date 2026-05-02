@@ -11,6 +11,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
   const [incidenceDate, setIncidenceDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const today = new Date().toISOString().split('T')[0];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +22,10 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
       const userReceiver = targetType === 'user' ? targetName : "";
       const groupReceiver = targetType === 'group' ? targetName : "";
       const priorityNum = parseInt(priority);
+      if (new Date(incidenceDate) > new Date()) {
+        alert("La fecha no puede ser futura");
+        return;
+      }
 
       const result = await Web3Service.registerIncidence(
         title,
@@ -69,7 +74,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
               </Col>
               <Col md={6}>
                 <Form.Label className="fw-bold">Fecha de Incidencia</Form.Label>
-                <Form.Control type="date" value={incidenceDate} onChange={(e) => setIncidenceDate(e.target.value)} required disabled={isSubmitting}/>
+                <Form.Control type="date" value={incidenceDate} onChange={(e) => setIncidenceDate(e.target.value)} required disabled={isSubmitting} max={today}/>
               </Col>
             </Row>
 

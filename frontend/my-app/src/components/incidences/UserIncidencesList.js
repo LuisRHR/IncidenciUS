@@ -140,7 +140,7 @@ const UserIncidencesList = ({ user, onCancel }) => {
                 <Row>
                     {filteredIncidences.map((inc, index) => (
                         <Col md={6} lg={4} className="mb-4" key={index}>
-                            <Card className="h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                            <Card className="h-100 shadow-sm border-2 rounded-3 overflow-hidden">
                                 <Card.Header className="bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
                                     <Badge bg={inc.priority === 2 ? 'danger' : inc.priority === 1 ? 'warning' : 'info'}>
                                         Prioridad {inc.priority === 2 ? 'Alta' : inc.priority === 1 ? 'Media' : 'Baja'}
@@ -157,7 +157,7 @@ const UserIncidencesList = ({ user, onCancel }) => {
                                     
                                     <ListGroup variant="flush" className="small bg-light rounded-3 border">
                                         <ListGroup.Item className="bg-transparent py-1">
-                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}</code>
+                                            <strong>De:</strong> <code className="text-alert">{inc.senderUserName}/{inc.senderEmail}</code>
                                         </ListGroup.Item>
                                         <ListGroup.Item className="bg-transparent py-1">
                                             <strong>Para:</strong> {inc.userReceiver ? `Usuario: ${inc.userReceiver}` : inc.groupReceiver ? `Grupo: ${inc.groupReceiver}` : 'N/A'}

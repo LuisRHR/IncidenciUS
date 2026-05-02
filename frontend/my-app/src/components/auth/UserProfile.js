@@ -42,7 +42,7 @@ const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
           
           <h5 className="fw-bold mb-4">Detalles de la Cuenta</h5>
           <ListGroup variant="flush">
-            <ListGroup.Item className="px-0 py-3">
+            <ListGroup.Item className="border-2 rounded-2">
               <Row>
                 <Col xs={4} className="text-muted">Wallet Address</Col>
                 <Col xs={8} className="text-end text-break">

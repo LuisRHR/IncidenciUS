@@ -177,7 +177,7 @@ const GroupIncidencesList = ({ user, userGroup, onCancel }) => {
                                     
                                     <ListGroup variant="flush" className="small bg-light rounded-3 border">
                                         <ListGroup.Item className="bg-transparent py-1">
-                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}</code>
+                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}/{inc.senderEmail}</code>
                                         </ListGroup.Item>
                                         <ListGroup.Item className="bg-transparent py-1">
                                             <strong>Para:</strong> Grupo: {userGroup?.name || 'N/A'}

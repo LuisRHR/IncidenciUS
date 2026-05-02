@@ -286,8 +286,8 @@ function App() {
       <Container>
         {view === 'dashboard' && (
           <div className="bg-white p-5 rounded-4 shadow-sm border text-center">
-            <h2 className="display-6 fw-bold">Panel de Control del usuario {user?.uid}</h2>
-            <p className="text-muted">Bienvenido a la red descentralizada de IncidenciUS.</p>
+            <h2 className="display-6 fw-bold">Panel de Control de {user?.userName}</h2>
+            <p className="text-muted">Bienvenido a la plataforma de incidencias descentralizada de IncidenciUS.</p>
           </div>
         )}
         

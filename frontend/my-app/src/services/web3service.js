@@ -450,12 +450,30 @@ export const Web3Service = {
     getUserIncidences: async () => {
         try {
             const contract = await getContract('INCIDENCES', false);
+            const usersContract = await getContract('USERS', false); // Para recuperar el correo electronico necesito acceder al contrato de usuario
             const incidencesBC = await contract.userViewIndividualIncidences();
+            
             if (!incidencesBC) return [];
+
             const res = await Promise.all(incidencesBC.map(async (inc) => {
                 const ipfsData = await fetchFromIPFS(inc.privateDataCID);
-                return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, cid: inc.privateDataCID, ...ipfsData };
-            }));
+                let senderEmail = ipfsData.senderEmail || ""; 
+                
+                if (!senderEmail && inc.senderNameHash) {
+                    try {
+                        const userId = await usersContract.getIdByUserName(inc.senderNameHash);
+                        if (userId.toString() !== "0") {
+                            const userData = await usersContract.getUserById(userId);
+                            const userProfile = await fetchFromIPFS(userData.userInfoCID);
+                            if (!userProfile.error) senderEmail = userProfile.email;
+                        }
+                    } catch (err) {
+                        console.warn("No se pudo recuperar email del contrato USERS", err);
+                    }
+                }
+
+                return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, cid: inc.privateDataCID, ...ipfsData, senderEmail: senderEmail };
+            })); 
             return res.filter(i => i !== null);
         } catch (error) {
             console.error("Error al obtener incidencias del usuario:", error);
@@ -466,11 +484,24 @@ export const Web3Service = {
     getGroupIncidences: async () => {
         try {
             const contract = await getContract('INCIDENCES', false);
+            const usersContract = await getContract('USERS', false); // Misma razón que en la función anterior
             const incidencesBC = await contract.userViewGroupIncidences();
             if (!incidencesBC) return [];
             const res = await Promise.all(incidencesBC.map(async (inc) => {
-                const ipfsData = await fetchFromIPFS(inc.privateDataCID);
-                return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, cid: inc.privateDataCID, ...ipfsData };
+                const ipfsData = await fetchFromIPFS(inc.privateDataCID);             
+                let senderEmail = ipfsData.senderEmail || "";
+                if (!senderEmail && inc.senderNameHash) {
+                    try {
+                        const userId = await usersContract.getIdByUserName(inc.senderNameHash);
+                        if (userId.toString() !== "0") {
+                            const userData = await usersContract.getUserById(userId);
+                            const userProfile = await fetchFromIPFS(userData.userInfoCID);
+                            if (!userProfile.error) senderEmail = userProfile.email;
+                        }
+                    } catch (e) {}
+                }
+
+                return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, cid: inc.privateDataCID, ...ipfsData, senderEmail: senderEmail };
             }));
             return res.filter(i => i !== null);
         } catch (error) {
