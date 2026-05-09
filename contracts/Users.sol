@@ -5,8 +5,8 @@ contract Users {
     enum userCondition {COMUN, ADMINISTRADOR_SISTEMA}
     struct User {
         uint uid;
-        string userNameHash;
-        string emailHash;
+        bytes32 userNameHash;
+        bytes32 emailHash;
         address wallet;
         userCondition condition;
         bool isBanned;
@@ -18,10 +18,10 @@ contract Users {
 
     mapping(uint => User) public users;
     mapping(address => uint) public walletToUid;
-    mapping(string => uint) public userNameToUid;
-    mapping(string => uint) public emailToUid;
+    mapping(bytes32 => uint) public userNameToUid;
+    mapping(bytes32 => uint) public emailToUid;
 
-    function registerUser(string memory userNameHashed, string memory emailHashed, string memory userInfoCID) public {
+    function registerUser(bytes32 userNameHashed, bytes32 emailHashed, string memory userInfoCID) public {
         //Restricción para evitar usuarios ya registrados
         require(walletToUid[msg.sender] == 0, "Usuario ya registrado con esta wallet");
         require(userNameToUid[userNameHashed] == 0, "Usuario ya registrado con este nombre");
@@ -70,7 +70,7 @@ contract Users {
         delete users[uid];
     }
 
-    function blockUser(string memory userNameHashed) public {
+    function blockUser(bytes32 userNameHashed) public {
         uint uid = walletToUid[msg.sender];
         require(users[uid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
         uint uidToBlock = userNameToUid[userNameHashed];
@@ -94,12 +94,12 @@ contract Users {
         uint uid = walletToUid[wallet];
         return uid;
     }
-    function getIdByUserName(string memory userNameHashed) public view returns (uint) {
+    function getIdByUserName(bytes32 userNameHashed) public view returns (uint) {
         uint uid = userNameToUid[userNameHashed];
         return uid;
     }
 
-     function getIdByEmail(string memory emailHashed) public view returns (uint) {
+     function getIdByEmail(bytes32 emailHashed) public view returns (uint) {
         uint uid = emailToUid[emailHashed];
         return uid;
     }

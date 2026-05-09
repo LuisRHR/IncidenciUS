@@ -83,7 +83,7 @@ const Register = ({ wallet, onSuccess }) => {
                         </Form.Group>
 
                         <Form.Group className="mb-4" controlId="formEmail">
-                            <Form.Label className="fw-bold small text-secondary">Email Corporativo</Form.Label>
+                            <Form.Label className="fw-bold small text-secondary">Email</Form.Label>
                             <Form.Control
                                 type="email"
                                 placeholder="usuario@informatica.us.es"

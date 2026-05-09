@@ -4,23 +4,23 @@ import CryptoJS from 'crypto-js';
 
 // ABI de los contratos 
 const USERS_ABI = [
-    "function registerUser(string memory userNameHashed, string memory emailHashed, string memory userInfoCID) public",
-    "function login() public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
+    "function registerUser( bytes32 userNameHashed,  bytes32 emailHashed, string memory userInfoCID) public",
+    "function login() public view returns (tuple(uint uid, bytes32 userNameHash,  bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
     "function deleteUser() public",
     "function giveUserAdminStatus(address userAddress) public",    
-    "function blockUser(string memory userNameHashed) public",
-    "function getActualUser() public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
+    "function blockUser(bytes32 userNameHashed) public",
+    "function getActualUser() public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
     "function getIdByWallet(address wallet) public view returns (uint)",
-    "function getIdByUserName(string memory userNameHashed) public view returns (uint)",
-    "function getIdByEmail(string memory emailHashed) public view returns (uint)",
-    "function getUserById(uint uid) public view returns (tuple(uint uid, string userNameHash, string emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))"
+    "function getIdByUserName(bytes32 userNameHashed) public view returns (uint)",
+    "function getIdByEmail(bytes32 emailHashed) public view returns (uint)",
+    "function getUserById(uint uid) public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))"
 ];
 
 const GROUPS_ABI = [
     "function createGroup(string memory groupName, string memory description) public",
-    "function inviteUserToGroup(string memory userNameHashed) public",
+    "function inviteUserToGroup(bytes32 userNameHashed) public",
     "function userJoined(string memory groupName) public",
-    "function deleteUserFromGroup(string memory userNameHashed) public",
+    "function deleteUserFromGroup(bytes32 userNameHashed) public",
     "function deleteSelfUserFromGroup_WhenDeletingUser() public",
     "function deleteGroup() public",
     "function getGroupMembers(uint groupId) public view returns (uint[] memory)",
@@ -31,18 +31,18 @@ const GROUPS_ABI = [
 ];
 
 const REPORTS_ABI = [
-    "function createBugReport(string memory senderHashed, string memory descriptionHashed, string memory titleHashed, string memory hashProofs, string memory userReportCID) public",
-    "function createUserReport(string memory senderHashed, string memory descriptionHashed, string memory userNameHashed, string memory emailHashed, string memory hashProofs, string memory userReportCID) public",
-    "function viewSortedBugReports() public view returns (tuple(uint id, string senderHash, string descriptionHash, string hashProofs, string titleHash, string userReportCID)[])",
-    "function viewSortedUserReports() public view returns (tuple(uint id, string senderHash, string descriptionHash, string hashProofs, string userNameHash, string emailHash, string userReportCID)[])",
+    "function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory userReportCID) public",
+    "function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID) public",
+    "function viewSortedBugReports() public view returns (tuple(uint id, bytes32 senderHash, bytes32 descriptionHash, bytes32 hashProofs, bytes32 titleHash, string userReportCID)[])",
+    "function viewSortedUserReports() public view returns (tuple(uint id, bytes32 senderHash, bytes32 descriptionHash, bytes32 hashProofs, bytes32 userNameHash, bytes32 emailHash, string userReportCID)[])",
     "function removeBugReport(uint requestId) public",
     "function removeUserReport(uint requestId) public"
 ];
 
 const INCIDENCES_ABI = [
-    "function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, uint8 priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiver, string memory groupReceiverHash, string memory privateDataCID) public",
-    "function userViewIndividualIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])",
-    "function userViewGroupIncidences() public view returns (tuple(uint id, string titleHash, string descriptionHash, string date, uint8 priorityLevel, string senderNameHash, string userReceiverHash, string groupReceiverHash, string privateDataCID)[])"
+    "function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID) public",
+    "function userViewIndividualIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID)[])",
+    "function userViewGroupIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID)[])"
 ];
 
 const ADMIN_REQUESTS_ABI = [
@@ -479,8 +479,8 @@ export const Web3Service = {
             const cid = await uploadToIPFS({ title, description, priority, createdAt: userDate, senderUserName: cleanSender, userReceiver: cleanUserRec, groupReceiver: cleanGroupRec }, PINATA_JWT);
             const tx = await contract.registerIncidence(
                 hashValue(title), hashValue(description.trim()), userDate || new Date().toISOString().split('T')[0],
-                priority, hashValue(cleanSender), cleanUserRec ? hashValue(cleanUserRec) : "",
-                cleanGroupRec, cleanGroupRec ? hashValue(cleanGroupRec) : "", cid
+                priority, hashValue(cleanSender), cleanUserRec ? hashValue(cleanUserRec) : ethers.ZeroHash,
+                cleanGroupRec, cleanGroupRec ? hashValue(cleanGroupRec) : ethers.ZeroHash, cid
             );
             return await tx.wait();
         } catch (error) {
@@ -501,7 +501,7 @@ export const Web3Service = {
                 const ipfsData = await fetchFromIPFS(inc.privateDataCID);
                 let senderEmail = ipfsData.senderEmail || ""; 
                 
-                if (!senderEmail && inc.senderNameHash) {
+                if (!senderEmail && inc.senderNameHash && inc.senderNameHash !== ethers.ZeroHash) {
                     try {
                         const userId = await usersContract.getIdByUserName(inc.senderNameHash);
                         if (userId.toString() !== "0") {
@@ -530,9 +530,9 @@ export const Web3Service = {
             const incidencesBC = await contract.userViewGroupIncidences();
             if (!incidencesBC) return [];
             const res = await Promise.all(incidencesBC.map(async (inc) => {
-                const ipfsData = await fetchFromIPFS(inc.privateDataCID);             
+                const ipfsData = await fetchFromIPFS(inc.privateDataCID);            
                 let senderEmail = ipfsData.senderEmail || "";
-                if (!senderEmail && inc.senderNameHash) {
+                if (!senderEmail && inc.senderNameHash && inc.senderNameHash !== ethers.ZeroHash) {
                     try {
                         const userId = await usersContract.getIdByUserName(inc.senderNameHash);
                         if (userId.toString() !== "0") {

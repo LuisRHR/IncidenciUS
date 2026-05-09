@@ -8,13 +8,13 @@ contract Incidences {
     enum priority {BAJA, MEDIA, ALTA}
     struct Incidence {
         uint id;
-        string titleHash;
-        string descriptionHash;
+        bytes32 titleHash;
+        bytes32 descriptionHash;
         string date;
         priority priorityLevel;
-        string senderNameHash;
-        string userReceiverHash;
-        string groupReceiverHash;
+        bytes32 senderNameHash;
+        bytes32 userReceiverHash;
+        bytes32 groupReceiverHash;
 
         // CID de IPFS con toda la información privada de la incidencia 
         string privateDataCID;
@@ -35,13 +35,13 @@ contract Incidences {
     mapping (uint => uint[]) public userRToIncidenceIds;
     mapping (uint => uint[]) public groupRToIncidenceIds;
 
-    function registerIncidence(string memory titleHash, string memory descriptionHash, string memory date, priority priorityLevel, string memory senderNameHash, string memory userReceiverHash, string memory groupReceiver, string memory groupReceiverHash, string memory privateDataCID) public{
+    function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, priority priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID) public{
         incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID);
-        if (keccak256(abi.encodePacked(userReceiverHash)) != keccak256(abi.encodePacked(""))) {
+        if (userReceiverHash != bytes32(0)) {
             uint userId = users.getIdByUserName(userReceiverHash);
             userRToIncidenceIds[userId].push(incidenceCount);
         }
-        else if (keccak256(abi.encodePacked(groupReceiver)) != keccak256(abi.encodePacked(""))) {
+        else if (groupReceiverHash != bytes32(0)) {
             uint groupId = groups.getIdByGroupName(groupReceiver);
             groupRToIncidenceIds[groupId].push(incidenceCount);
         }

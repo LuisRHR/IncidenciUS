@@ -47,7 +47,7 @@ contract Groups {
         groupCount++;
     }
 
-    function inviteUserToGroup(string memory userNameHashed) public {
+    function inviteUserToGroup(bytes32 userNameHashed) public {
         require(walletAdminToGroupId[msg.sender] != 0, "No eres administrador de ningun grupo"); // Verificamos que el remitente es administrador de un grupo
 
         uint groupId = walletAdminToGroupId[msg.sender];
@@ -106,7 +106,7 @@ contract Groups {
     }
 
 
-    function deleteUserFromGroup(string memory userNameHashed) public {
+    function deleteUserFromGroup(bytes32 userNameHashed) public {
         uint groupId = walletAdminToGroupId[msg.sender];
         require(groupId != 0, "No eres administrador de ningun grupo");
         uint userId = users.getIdByUserName(userNameHashed);

@@ -11,10 +11,10 @@ contract Reports {
 
     struct BugReport {
         uint id;
-        string senderHash;
-        string descriptionHash;
-        string hashProofs;
-        string titleHash;
+        bytes32 senderHash;
+        bytes32 descriptionHash;
+        bytes32 hashProofs;
+        bytes32 titleHash;
 
         // CID de IPFS para almacenar las pruebas de la denuncia, como fotos o videos, junto con el resto de la información.
         string userReportCID;
@@ -22,11 +22,11 @@ contract Reports {
 
     struct UserReport {
         uint id;
-        string senderHash;
-        string descriptionHash;
-        string hashProofs;
-        string userNameHash;
-        string emailHash;
+        bytes32 senderHash;
+        bytes32 descriptionHash;
+        bytes32 hashProofs;
+        bytes32 userNameHash;
+        bytes32 emailHash;
 
         // CID de IPFS para almacenar las pruebas de la denuncia, como fotos o videos, junto con el resto de la información.
         string userReportCID;
@@ -42,12 +42,12 @@ contract Reports {
     mapping(uint => BugReport) public bugReports;
     mapping(uint => UserReport) public userReports;
 
-    function createBugReport(string memory senderHashed, string memory descriptionHashed, string memory titleHashed, string memory hashProofs, string memory userReportCID) public {
+    function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory userReportCID) public {
         bugReports[reportCount] = BugReport(reportCount, senderHashed, descriptionHashed, hashProofs, titleHashed, userReportCID);
         reportCount++;
     }
 
-    function createUserReport(string memory senderHashed, string memory descriptionHashed, string memory userNameHashed, string memory emailHashed, string memory hashProofs, string memory userReportCID) public {
+    function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID) public {
         userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
         reportCount++;
     }

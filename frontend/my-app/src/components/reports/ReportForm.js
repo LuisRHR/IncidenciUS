@@ -86,7 +86,7 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
                 </Form.Group>
 
                 <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold small">Pruebas (Proofs)</Form.Label>
+                    <Form.Label className="fw-bold small">Pruebas</Form.Label>
                     <Form.Control 
                         type="text" 
                         value={proofs} 
