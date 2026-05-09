@@ -29,10 +29,11 @@ function App() {
 
   const refreshData = useCallback(async () => {
       try {
-        if (window.ethereum && window.ethereum.selectedAddress) {
-          
+        const sessionKey = sessionStorage.getItem('session_key');
+        
+        if (window.ethereum && window.ethereum.selectedAddress && sessionKey) {
           const userData = await Web3Service.getActualUser(); 
-          
+
           if (userData.isBanned) {
             setUser(null);
             setUserGroup(null);
@@ -66,6 +67,12 @@ function App() {
         setView('register');
         return;
       }
+
+      const sessionReady = await Web3Service.initSession();
+      if (!sessionReady) {
+        alert("Firma requerida para acceder a los datos cifrados.");
+          return; 
+      }
       if (userData.isBanned === true) {
         alert("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por un administrador.");
         setUser(null);
@@ -75,7 +82,7 @@ function App() {
       // para engañar al sistema
       userData.role='Admin de Sistema';
       setUser(userData);
-        try {
+      try {
         let dataGroup = await Web3Service.getActualGroup();
         if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
           setUserGroup(dataGroup);
@@ -86,8 +93,8 @@ function App() {
       }
       setView('dashboard');
       } catch (error) {
-        console.error("Error al obtener información del grupo:", error);
-      } 
+        console.error("Error en el flujo de login:", error);
+      }
   };
 
   const handleRegisterSuccess = (userData) => {
@@ -216,7 +223,7 @@ function App() {
   // --- VISTA PRINCIPAL ---
   return (
     <div className="bg-light min-vh-100">
-      <Navbar bg="white" expand="lg" className="shadow-sm border-bottom py-3 mb-4">
+      <Navbar bg="white" expand="lg" className="shadow-sm border-bottom sticky-top py-3 mb-4">
         <Container>
           <Navbar.Brand onClick={() => setView('dashboard')} className="fw-bold text-primary fs-3" style={{cursor:'pointer'}}>
             IncidenciUS
@@ -269,7 +276,7 @@ function App() {
               <NavDropdown title="Mi Cuenta" id="user-dropdown" align="end">
                 <NavDropdown.Item onClick={() => setView('profile')}>Ver Perfil</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={() => {setView('welcome'); setUser(null); setUserGroup(null);}}>Cerrar Sesión</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => {setView('welcome'); setUser(null); setUserGroup(null); sessionStorage.removeItem('session_key');}}>Cerrar Sesión</NavDropdown.Item>
               </NavDropdown>
               
               <div className="text-end ms-3 me-3">

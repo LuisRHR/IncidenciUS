@@ -26,7 +26,12 @@ const Register = ({ wallet, onSuccess }) => {
                 setIsSubmitting(false);
                 return;
             }
-
+            const sessionReady = await Web3Service.initSession();
+            if (!sessionReady) {
+                setError("Se requiere firma para cifrar tus datos.");
+                setIsSubmitting(false);
+                return;
+            }
             const result = await Web3Service.register(formData.userName, formData.email);
 
             const newUser = {
@@ -41,6 +46,7 @@ const Register = ({ wallet, onSuccess }) => {
             
             onSuccess(newUser);
         } catch (err) {
+            console.error("Error en el registro:", err);
             setError(err.message || "Error en la transacción de registro. Asegúrate de que los datos sean únicos.");
         } finally {
             setIsSubmitting(false);

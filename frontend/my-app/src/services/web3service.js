@@ -1,4 +1,6 @@
 import { ethers } from 'ethers';
+import EthCrypto from 'eth-crypto';
+import CryptoJS from 'crypto-js';
 
 // ABI de los contratos 
 const USERS_ABI = [
@@ -53,6 +55,26 @@ const IPFS_GATEWAY = process.env.REACT_APP_IPFS_GATEWAY;
 const IPFS_UPLOAD_URL = process.env.REACT_APP_IPFS_UPLOAD_URL;
 const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
 
+const getSessionKey = () => sessionStorage.getItem('session_key');
+
+const encryptData = (dataObject) => {
+    const key = getSessionKey();
+    if (!key) return dataObject;
+    return CryptoJS.AES.encrypt(JSON.stringify(dataObject), key).toString();
+};
+
+const decryptData = (encryptedString) => {
+    const key = getSessionKey();
+    if (!key) return { error: "Sesión no iniciada para descifrado" };
+    try {
+        const bytes = CryptoJS.AES.decrypt(encryptedString, key);
+        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        return JSON.parse(decryptedStr);
+    } catch (e) {
+        return { error: "Error al descifrar o clave inválida" };
+    }
+};
+
 const getContract = async (contractType, withSigner = false) => {
     if (!window.ethereum) throw new Error("MetaMask no detectado");
 
@@ -79,10 +101,12 @@ const getContract = async (contractType, withSigner = false) => {
 
 const uploadToIPFS = async (data, pinataJwt = null) => {
     try {
+        const payload = encryptData(data);
+
         if (!pinataJwt) {
             const mockCID = "QmSimulated" + Math.random().toString(36).substring(2, 15);
             const mockStorage = JSON.parse(localStorage.getItem('mockIPFSStorage') || '{}');
-            mockStorage[mockCID] = data;
+            mockStorage[mockCID] = payload;
             localStorage.setItem('mockIPFSStorage', JSON.stringify(mockStorage));
             return mockCID;
         }
@@ -90,7 +114,7 @@ const uploadToIPFS = async (data, pinataJwt = null) => {
         const response = await fetch(IPFS_UPLOAD_URL, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${pinataJwt}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pinataContent: data })
+            body: JSON.stringify({ pinataContent: payload })
         });
 
         const result = await response.json();
@@ -104,13 +128,18 @@ const uploadToIPFS = async (data, pinataJwt = null) => {
 const fetchFromIPFS = async (cid) => {
     try {
         if (!cid || cid === "N/A" || cid === "") return { error: "No CID" };
+        let data;
         if (cid.startsWith("QmSimulated")) {
             const mockStorage = JSON.parse(localStorage.getItem('mockIPFSStorage') || '{}');
-            return mockStorage[cid] || { error: "Not found" };
+            data = mockStorage[cid];
+        } else {
+            const gatewayUrl = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
+            const response = await fetch(`${gatewayUrl}${cid}`);
+            data = await response.json();
         }
-        const gatewayUrl = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
-        const response = await fetch(`${gatewayUrl}${cid}`);
-        return await response.json();
+
+        const content = (data && data.pinataContent) ? data.pinataContent : data;
+        return typeof content === 'string' ? decryptData(content) : content;
     } catch (error) {
         return { error: error.message };
     }
@@ -119,6 +148,19 @@ const fetchFromIPFS = async (cid) => {
 const hashValue = (value) => ethers.id(value);
 
 export const Web3Service = {
+
+    initSession: async () => {
+        if (getSessionKey()) return true;
+        try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const signature = await signer.signMessage("Acceder a mi panel privado de IncidenciUS");
+            sessionStorage.setItem('session_key', hashValue(signature));
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
     
     login: async () => {
         try {

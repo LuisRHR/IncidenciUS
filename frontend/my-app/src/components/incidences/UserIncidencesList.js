@@ -141,7 +141,8 @@ const UserIncidencesList = ({ user, onCancel }) => {
                     {filteredIncidences.map((inc, index) => (
                         <Col md={6} lg={4} className="mb-4" key={index}>
                             <Card className="h-100 shadow-sm border-2 rounded-3 overflow-hidden">
-                                <Card.Header className="bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                                <Badge bg="success" className="mx-2 mt-2">#{inc.id}</Badge>
+                                <Card.Header className="bg-white border-2 pt-3 d-flex justify-content-between align-items-center">
                                     <Badge bg={inc.priority === 2 ? 'danger' : inc.priority === 1 ? 'warning' : 'info'}>
                                         Prioridad {inc.priority === 2 ? 'Alta' : inc.priority === 1 ? 'Media' : 'Baja'}
                                     </Badge>
@@ -150,7 +151,9 @@ const UserIncidencesList = ({ user, onCancel }) => {
                                     </small>
                                 </Card.Header>
                                 <Card.Body>
-                                    <Card.Title className="fw-bold text-dark">{inc.title}</Card.Title>
+                                    <Card.Title className="fw-bold text-dark">
+                                        {inc.title}
+                                    </Card.Title>
                                     <Card.Text className="text-muted small">
                                         {inc.description}
                                     </Card.Text>
