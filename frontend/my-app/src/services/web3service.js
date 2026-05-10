@@ -53,6 +53,7 @@ const ADMIN_REQUESTS_ABI = [
 
 const IPFS_GATEWAY = process.env.REACT_APP_IPFS_GATEWAY;
 const IPFS_UPLOAD_URL = process.env.REACT_APP_IPFS_UPLOAD_URL;
+const IPFS_FILE_UPLOAD_URL = process.env.REACT_APP_IPFS_FILE_UPLOAD_URL;
 const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
 
 const getSessionKey = () => sessionStorage.getItem('session_key');
@@ -124,6 +125,46 @@ const uploadToIPFS = async (data, pinataJwt = null) => {
         throw error;
     }
 };
+const uploadFilesToIPFS = async (files) => {
+    if (!files || files.length === 0) return [];
+    if (!process.env.REACT_APP_PINATA_JWT) {
+        return Array.from(files).map(f => "QmMockFile" + Math.random().toString(36));
+    }
+
+    const uploadedCIDs = [];
+    const filesArray = Array.from(files);
+
+    for (const file of filesArray) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch(IPFS_FILE_UPLOAD_URL, {
+                method: 'POST',
+                headers: { 
+                    // IMPORTANTE: Solo Authorization. 
+                    'Authorization': `Bearer ${process.env.REACT_APP_PINATA_JWT}` 
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errorDetail = await res.json();
+                console.error("Error en la respuesta de Pinata:", errorDetail);
+                throw new Error(`Pinata error: ${res.statusText}`);
+            }
+
+            const json = await res.json();
+            uploadedCIDs.push(json.IpfsHash);
+
+        } catch (error) {
+            console.error("Error subiendo archivo individual:", error);
+            throw error;
+        }
+    }
+    
+    return uploadedCIDs;
+};  
 
 const fetchFromIPFS = async (cid) => {
     try {
@@ -394,30 +435,52 @@ export const Web3Service = {
         }
     },
 
-    createBugReport: async (userSender, title, description, proofs) => {
+    createBugReport: async (userSender, title, description, files) => {
         try {
             const contract = await getContract('REPORTS', true);
-            const cid = await uploadToIPFS({ userSender: userSender.trim(), title, description, proofs }, PINATA_JWT);
-            const tx = await contract.createBugReport(hashValue(userSender.trim()), hashValue(description), hashValue(title), hashValue(proofs), cid);
+            const fileCIDs = await uploadFilesToIPFS(files);
+            
+            const cid = await uploadToIPFS({ 
+                userSender: userSender.trim(), 
+                title, 
+                description, 
+                proofs: fileCIDs
+            }, PINATA_JWT);
+
+            const tx = await contract.createBugReport(
+                hashValue(userSender.trim()), 
+                hashValue(description), 
+                hashValue(title), 
+                hashValue(fileCIDs.join(',')),
+                cid
+            );
             return await tx.wait();
-        } catch (error) {
-            console.error("Error al crear reportes de bugs:", error);
-            throw error;
-        }
+        } catch (error) { console.error(error); throw error; }
     },
 
-    createUserReport: async (userSender, userNameToReport, email, description, proofs) => {
+    createUserReport: async (userSender, userNameToReport, email, description, files) => {
         try {
             const contract = await getContract('REPORTS', true);
-            const cleanTarget = userNameToReport.trim();
-            const cleanEmail = email.trim();
-            const cid = await uploadToIPFS({ userSender: userSender.trim(), userNameReported: cleanTarget, email: cleanEmail, description, proofs }, PINATA_JWT);
-            const tx = await contract.createUserReport(hashValue(userSender.trim()), hashValue(description), hashValue(cleanTarget), hashValue(cleanEmail), hashValue(proofs), cid);
+            const fileCIDs = await uploadFilesToIPFS(files); // Subir imágenes
+            
+            const cid = await uploadToIPFS({ 
+                userSender: userSender.trim(), 
+                userNameReported: userNameToReport.trim(), 
+                email: email.trim(), 
+                description, 
+                proofs: fileCIDs 
+            }, PINATA_JWT);
+
+            const tx = await contract.createUserReport(
+                hashValue(userSender.trim()), 
+                hashValue(description), 
+                hashValue(userNameToReport.trim()), 
+                hashValue(email.trim()), 
+                hashValue(fileCIDs.join(',')), 
+                cid
+            );
             return await tx.wait();
-        } catch (error) {
-            console.error("Error al crear reportes de usuario:", error);
-            throw error;
-        }
+        } catch (error) { console.error(error); throw error; }
     },
 
     viewSortedBugReports: async () => {

@@ -144,8 +144,25 @@ const ReportList = ({ onDecline }) => {
                                         {rep.type === 'USER_REPORT' && rep.email && <div className="small text-muted">{rep.email}</div>}
                                     </td>
                                     <td><small>{rep.description}</small></td>
-                                    <td><code className="small text-muted">{rep.proofs?.substring(0, 20)}...</code></td>
-                                    <td className="text-end">
+                                    <td>
+                                        {Array.isArray(rep.proofs) ? (
+                                            <div className="d-flex flex-wrap gap-1">
+                                                {rep.proofs.map((cid, i) => (
+                                                    <img 
+                                                        key={i}
+                                                        src={`${Web3Service.IPFS_GATEWAY}${cid}`} 
+                                                        alt="Prueba"
+                                                        className="rounded border"
+                                                        style={{ width: '35px', height: '35px', objectFit: 'cover', cursor: 'pointer' }}
+                                                        onClick={() => window.open(`${Web3Service.IPFS_GATEWAY}${cid}`, '_blank')}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <code className="small text-muted">{rep.proofs?.substring(0, 20)}...</code>
+                                        )}
+                                    </td>
+                                    <td className="text-end">                                    
                                         <div className="d-flex gap-2 justify-content-end">
                                             {rep.type === 'USER_REPORT' && (
                                                 <Button 

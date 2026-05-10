@@ -8,9 +8,9 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
     const [targetUserName, setTargetUserName] = useState('');
     const [targetEmail, setTargetEmail] = useState('');
     const [description, setDescription] = useState('');
-    const [proofs, setProofs] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [proofs, setProofs] = useState([]);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -86,14 +86,17 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
                 </Form.Group>
 
                 <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold small">Pruebas</Form.Label>
-                    <Form.Control 
-                        type="text" 
-                        value={proofs} 
-                        onChange={(e) => setProofs(e.target.value)} 
-                        required 
-                        disabled={isSubmitting}
-                    />
+                    {/*queremos poder subir archivos*/}
+                    <Form.Group className="mb-4">
+                        <Form.Label className="fw-bold small">Pruebas (Imágenes)</Form.Label>
+                        <Form.Control 
+                            type="file" 
+                            onChange={(e) => setProofs(e.target.files)}
+                            disabled={isSubmitting} 
+                            multiple 
+                            accept="image/*"
+                        />
+                    </Form.Group>
                 </Form.Group>
 
                 <div className="d-grid gap-2">
