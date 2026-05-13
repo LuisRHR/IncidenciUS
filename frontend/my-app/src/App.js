@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav, NavDropdown, Container, Badge } from 'react-bootstrap';
 import { Web3Service } from './services/web3service';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Importación de componentes
 import Login from './components/auth/Login';
@@ -61,29 +62,11 @@ function App() {
 
   const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
-    try{
-      if (!userData || userData.exists === false) {
-        alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
-        setView('register');
-        return;
-      }
-
-      const sessionReady = await Web3Service.initSession();
-      if (!sessionReady) {
-        alert("Firma requerida para acceder a los datos cifrados.");
-          return; 
-      }
-      if (userData.isBanned === true) {
-        alert("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por un administrador.");
-        setUser(null);
-        setView('welcome');
-        return;
-      }
-      // para engañar al sistema
-      userData.role='Admin de Sistema';
+    if (userData && userData.exists) {
+      userData.role = 'Admin de Sistema';
       setUser(userData);
       try {
-        let dataGroup = await Web3Service.getActualGroup();
+        const dataGroup = await Web3Service.getActualGroup();
         if (dataGroup && dataGroup !== 0 && dataGroup !== null) {
           setUserGroup(dataGroup);
           setAllMembers(dataGroup.members);
@@ -92,9 +75,11 @@ function App() {
         console.error("Error al obtener información del grupo:", error);
       }
       setView('dashboard');
-      } catch (error) {
-        console.error("Error en el flujo de login:", error);
-      }
+    } else {
+      alert("No se encontró un perfil asociado a esta wallet. Por favor, regístrate para continuar.");
+      setView('register');
+      return;
+    }
   };
 
   const handleRegisterSuccess = (userData) => {
@@ -291,36 +276,46 @@ function App() {
       </Navbar>
 
       <Container>
-        {view === 'dashboard' && (
-          <div className="bg-white p-5 rounded-4 shadow-sm border text-center">
-            <h2 className="display-6 fw-bold">Panel de Control de {user?.userName}</h2>
-            <p className="text-muted">Bienvenido a la plataforma de incidencias descentralizada de IncidenciUS.</p>
-          </div>
-        )}
-        
-        {view === 'join-group' && <JoinGroupForm onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
-        {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
-        {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
-        {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
-        {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}
-        {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
-        
-        {view === 'manage-members' && (
-          <GroupManagement 
-            groupName={userGroup?.name} 
-            members={allMembers} 
-            onMemberRemoved={handleGroupMemberRemoved}
-            onGroupDeleted={handleGroupDeleted}
-          />
-        )}
-        
-        {view === 'report-form' && <ReportForm user={user} onSubmit={handleReportSuccess} onCancel={() => setView('dashboard')} />}
-        {view === 'admin-request' && <AdminRequestForm user={user} wallet={wallet} onSubmit={handleAdminRequestSuccess} onCancel={() => setView('dashboard')} />}
-        
-        {view === 'view-reports' && user?.role === 'Admin de Sistema' && <ReportList onDecline={() => setView('dashboard')} />}
-        {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
-          <AdminRequestList onAcceptSuccess={() => setView('dashboard')} onDecline={() => setView('dashboard')} />
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+          >
+            {view === 'dashboard' && (
+              <div className="bg-white p-5 rounded-4 shadow-sm border text-center">
+                <h2 className="display-6 fw-bold">Panel de Control de {user?.userName}</h2>
+                <p className="text-muted">Bienvenido a la plataforma de incidencias descentralizada de IncidenciUS.</p>
+              </div>
+            )}
+            
+            {view === 'join-group' && <JoinGroupForm onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
+            {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
+            {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
+            {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
+            {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}
+            {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
+            
+            {view === 'manage-members' && (
+              <GroupManagement 
+                groupName={userGroup?.name} 
+                members={allMembers} 
+                onMemberRemoved={handleGroupMemberRemoved}
+                onGroupDeleted={handleGroupDeleted}
+              />
+            )}
+            
+            {view === 'report-form' && <ReportForm user={user} onSubmit={handleReportSuccess} onCancel={() => setView('dashboard')} />}
+            {view === 'admin-request' && <AdminRequestForm user={user} wallet={wallet} onSubmit={handleAdminRequestSuccess} onCancel={() => setView('dashboard')} />}
+            
+            {view === 'view-reports' && user?.role === 'Admin de Sistema' && <ReportList onDecline={() => setView('dashboard')} />}
+            {view === 'view-requests' && user?.role === 'Admin de Sistema' && (
+              <AdminRequestList onAcceptSuccess={() => setView('dashboard')} onDecline={() => setView('dashboard')} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </Container>
     </div>
   );

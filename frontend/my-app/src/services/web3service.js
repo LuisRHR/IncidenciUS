@@ -191,7 +191,7 @@ const hashValue = (value) => ethers.id(value);
 export const Web3Service = {
 
     initSession: async () => {
-        if (getSessionKey()) return true;
+        // He removido el obtener la clave de la sesión por que podría llegar a ser un problema de privacidad entre cuentas en un mismo dispositivo
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();

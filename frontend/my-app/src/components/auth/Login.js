@@ -14,7 +14,13 @@ const Login = ({ onConnect }) => {
             try {   
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 const address = accounts[0];
-
+                const sessionReady = await Web3Service.initSession();
+                
+                if (!sessionReady) {
+                    setError("Se requiere la firma para acceder a tus datos cifrados.");
+                    setIsConnecting(false);
+                    return;
+                }
                 const userData = await Web3Service.login();
 
                 if (userData && userData.exists) { // Verificación segura
@@ -28,13 +34,14 @@ const Login = ({ onConnect }) => {
                     onConnect(address, null); 
                 }
             } catch (err) {
-                setError("Error al validar usuario en Blockchain");
+                console.error(err);
+                setError("Error en el proceso de autenticación.");
             } finally {
                 setIsConnecting(false);
             }
         } else {
-                setError("Instala MetaMask");
-                setIsConnecting(false);
+            setError("Instala MetaMask");
+            setIsConnecting(false);
         }
     };
 
