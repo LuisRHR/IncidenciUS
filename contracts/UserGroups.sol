@@ -26,8 +26,9 @@ contract Groups {
     mapping (address => uint) public walletAdminToGroupId;
     mapping (address => uint) public walletToGroupId;
     mapping (uint => uint[]) public userIdToInvitedGroupIds;
+    mapping (uint => mapping (address => string)) public groupUsersKeys;
 
-    function createGroup(string memory groupName, string memory description) public {
+    function createGroup(string memory groupName, string memory description, string memory encryptedAdminKey) public {
         require(groupNameToId[groupName] == 0, "Grupo ya existe con este nombre"); 
 
         // Creamos un nuevo grupo tras la verificación anterior
@@ -43,21 +44,27 @@ contract Groups {
         groupNameToId[groupName] = groupId;
         walletAdminToGroupId[msg.sender] = groupId;
         walletToGroupId[msg.sender] = groupId;
+        groupUsersKeys[groupId][msg.sender] = encryptedAdminKey;
 
         groupCount++;
     }
 
-    function inviteUserToGroup(bytes32 userNameHashed) public {
-        require(walletAdminToGroupId[msg.sender] != 0, "No eres administrador de ningun grupo"); // Verificamos que el remitente es administrador de un grupo
-
+    function inviteUserToGroup(bytes32 userNameHashed, string memory encryptedKeyForUser) public {
         uint groupId = walletAdminToGroupId[msg.sender];
+        require(groupId != 0, "No eres administrador de ningun grupo");
+        
         uint userId = users.getIdByUserName(userNameHashed);
         require(userId != 0, "Usuario a invitar no registrado"); // Verificamos que el usuario a invitar está registrado
         require(!isMember(groupId, userId), "Usuario ya es miembro del grupo"); // Verificamos que el usuario no es ya miembro del grupo
         require(!isInvited(groupId, userId), "Usuario ya ha sido invitado al grupo"); // Verificamos que el usuario no ha sido ya invitado al grupo
+        require(userId != 0, "Usuario no registrado");
+        
+        address userWallet = users.getUserById(userId).wallet;
+        
+        groups[groupId].invitedUsers.push(userId);
+        userIdToInvitedGroupIds[userId].push(groupId);
 
-        groups[groupId].invitedUsers.push(userId); // Añadimos al usuario a la lista de invitados del grupo
-        userIdToInvitedGroupIds[userId].push(groupId); // Añadimos el grupo a la lista de grupos a los que el usuario ha sido invitado
+        groupUsersKeys[groupId][userWallet] = encryptedKeyForUser;
     }
 
     // Funciones auxiliares para chequeo de membresía e invitación
@@ -93,8 +100,12 @@ contract Groups {
         walletToGroupId[msg.sender] = groupId;
         // Ahora nos aseguramos que el usuario se elimina de la lista de invitados de TODOS LOS GRUPOS a los que haya podido ser invitado:
         for (uint i = 0; i < userIdToInvitedGroupIds[userId].length; i++) {
-            uint groupIds = userIdToInvitedGroupIds[userId][i];
-            uint[] storage groupInvitedUsers = groups[groupIds].invitedUsers;
+            uint invitedGroupId = userIdToInvitedGroupIds[userId][i];
+            if (invitedGroupId != groupId) {
+                delete groupUsersKeys[invitedGroupId][msg.sender];
+            }
+
+            uint[] storage groupInvitedUsers = groups[invitedGroupId].invitedUsers;
             for (uint j = 0; j < groupInvitedUsers.length; j++) {
                 if (groupInvitedUsers[j] == userId) {
                     groupInvitedUsers[j] = groupInvitedUsers[groupInvitedUsers.length - 1];
@@ -103,6 +114,7 @@ contract Groups {
                 }
             }
         }
+        delete userIdToInvitedGroupIds[userId];
     }
 
 
@@ -165,6 +177,10 @@ contract Groups {
         delete groupNameToId[groups[groupId].groupName];
         delete walletAdminToGroupId[msg.sender];
         delete groups[groupId];
+    }
+    function setMemberGroupKey(uint groupId, address member, string memory encryptedKey) public {
+        require(msg.sender == users.getUserById(groups[groupId].admin).wallet, "Solo el admin del grupo puede distribuir llaves");
+        groupUsersKeys[groupId][member] = encryptedKey;
     }
 
     function getGroupMembers() public view returns (uint[] memory) {

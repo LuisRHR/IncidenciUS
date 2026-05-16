@@ -12,6 +12,8 @@ contract Users {
         bool isBanned;
         // CID de IPFS
         string userInfoCID;
+        // Clave pública para cifrado de datos
+        string publicKey;
     }
 
     uint public userCount=1;
@@ -21,7 +23,7 @@ contract Users {
     mapping(bytes32 => uint) public userNameToUid;
     mapping(bytes32 => uint) public emailToUid;
 
-    function registerUser(bytes32 userNameHashed, bytes32 emailHashed, string memory userInfoCID) public {
+    function registerUser(bytes32 userNameHashed, bytes32 emailHashed, string memory userInfoCID, string memory publicKey) public {
         //Restricción para evitar usuarios ya registrados
         require(walletToUid[msg.sender] == 0, "Usuario ya registrado con esta wallet");
         require(userNameToUid[userNameHashed] == 0, "Usuario ya registrado con este nombre");
@@ -30,7 +32,7 @@ contract Users {
         //Creamos el nuevo usuario
         uint uid = userCount;
         
-        users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID);
+        users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID, publicKey);
         walletToUid[msg.sender] = uid;
         userNameToUid[userNameHashed] = uid;
         emailToUid[emailHashed] = uid;

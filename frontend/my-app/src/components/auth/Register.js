@@ -32,7 +32,13 @@ const Register = ({ wallet, onSuccess }) => {
                 setIsSubmitting(false);
                 return;
             }
-            const result = await Web3Service.register(formData.userName, formData.email);
+            const publicKey = sessionStorage.getItem('user_pub_key');
+            if (!publicKey) {
+                setError("Error al generar llaves criptográficas. Reintenta.");
+                setIsSubmitting(false);
+                return;
+            }
+            const result = await Web3Service.register(formData.userName, formData.email, publicKey);
 
             const newUser = {
                 wallet,
@@ -47,7 +53,7 @@ const Register = ({ wallet, onSuccess }) => {
             onSuccess(newUser);
         } catch (err) {
             console.error("Error en el registro:", err);
-            setError(err.message || "Error en la transacción de registro. Asegúrate de que los datos sean únicos.");
+            setError(err.message || "Error en la transacción de registro. Asegúrate de que los datos sean correctos.");
         } finally {
             setIsSubmitting(false);
         }
@@ -57,18 +63,10 @@ const Register = ({ wallet, onSuccess }) => {
         <Container className="d-flex justify-content-center">
             <Card className="shadow-sm border-0 rounded-4 p-2" style={{ maxWidth: '500px', width: '100%' }}>
                 <Card.Body className="p-4">
-                    <div className="text-center mb-4">
+                    <div className="text-center mb-5">
                         <h2 className="fw-bold">Nuevo Perfil</h2>
                         <p className="text-muted small">Completa tus datos para vincular tu identidad a la red.</p>
                     </div>
-
-                    <Alert variant="light" className="border text-center mb-4 bg-light">
-                        <small className="text-muted d-block text-uppercase fw-bold mb-1" style={{ fontSize: '0.7rem' }}>
-                            Wallet Vinculada
-                        </small>
-                        <code className="text-primary" style={{ fontSize: '0.85rem' }}>{wallet}</code>
-                    </Alert>
-
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3" controlId="formUserName">
                             <Form.Label className="fw-bold small text-secondary">Nombre de Usuario</Form.Label>

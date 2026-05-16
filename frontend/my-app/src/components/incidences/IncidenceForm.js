@@ -34,7 +34,8 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
         userReceiver.trim(),
         groupReceiver.trim(),
         incidenceDate,
-        user.userName.trim()
+        user.userName.trim(),
+        user.email ? user.email.trim() : ""
       );
 
       onSubmit();

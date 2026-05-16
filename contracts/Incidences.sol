@@ -18,6 +18,8 @@ contract Incidences {
 
         // CID de IPFS con toda la información privada de la incidencia 
         string privateDataCID;
+        // Llave de AES
+        string encryptedAESKey;
     }
     
     uint public incidenceCount=1;
@@ -35,8 +37,8 @@ contract Incidences {
     mapping (uint => uint[]) public userRToIncidenceIds;
     mapping (uint => uint[]) public groupRToIncidenceIds;
 
-    function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, priority priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID) public{
-        incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID);
+    function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, priority priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID, string memory encryptedAESKey) public{
+        incidences[incidenceCount] = Incidence(incidenceCount, titleHash, descriptionHash, date, priorityLevel, senderNameHash, userReceiverHash, groupReceiverHash, privateDataCID, encryptedAESKey);
         if (userReceiverHash != bytes32(0)) {
             uint userId = users.getIdByUserName(userReceiverHash);
             userRToIncidenceIds[userId].push(incidenceCount);

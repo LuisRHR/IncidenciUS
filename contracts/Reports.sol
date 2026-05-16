@@ -5,10 +5,6 @@ import "./Users.sol";
 
 contract Reports {
 
-    // Para implementar correctamente la extensión de report a bugreport y userreport vamos a
-    // usar directamente dos structs separados ya que no hay herencia entre structs aunque
-    // comparten una estructura base
-
     struct BugReport {
         uint id;
         bytes32 senderHash;
@@ -42,26 +38,46 @@ contract Reports {
     mapping(uint => BugReport) public bugReports;
     mapping(uint => UserReport) public userReports;
 
-    function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory userReportCID) public {
+    mapping(uint => mapping(address => string)) public bugReportKeys;
+    mapping(uint => mapping(address => string)) public userReportKeys;
+
+    function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public {
+        require(adminWallets.length == encryptedKeys.length, "Arrays de admins y llaves deben coincidir");
+        
         bugReports[reportCount] = BugReport(reportCount, senderHashed, descriptionHashed, hashProofs, titleHashed, userReportCID);
+        
+        for (uint i = 0; i < adminWallets.length; i++) {
+            bugReportKeys[reportCount][adminWallets[i]] = encryptedKeys[i];
+        }
         reportCount++;
     }
 
-    function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID) public {
+    function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public {
+        require(adminWallets.length == encryptedKeys.length, "Arrays de admins y llaves deben coincidir");
+
         userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
+
+        for (uint i = 0; i < adminWallets.length; i++) {
+            userReportKeys[reportCount][adminWallets[i]] = encryptedKeys[i];
+        }
         reportCount++;
     }
 
     function viewSortedBugReports() public view returns (BugReport[] memory) {
-        BugReport[] memory result = new BugReport[](reportCount);
-        uint count = 0;
+        uint activeCount = 0;
         uint userId = users.getIdByWallet(msg.sender);
-        Users.userCondition condition = users.getUserById(userId).condition;
-        require(condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");        for (uint i = reportCount; i>0; i--) {
-            // Si existe un bugReport con ese id, lo añadimos al resultado, además evitar confundirlo con un userReport por un error que sucedia.
-            if (bugReports[i].id!=0 || userReports[i].id!=0) { 
-                result[count] = bugReports[i];
-                count++;
+        require(users.getUserById(userId).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
+
+        for (uint i = 1; i < reportCount; i++) {
+            if (bugReports[i].id != 0) activeCount++;
+        }
+
+        BugReport[] memory result = new BugReport[](activeCount);
+        uint currentIndex = 0;
+        for (uint i = reportCount; i > 0; i--) {
+            if (bugReports[i].id != 0 || userReports[i].id != 0) {
+                result[currentIndex] = bugReports[i];
+                currentIndex++;
             }
         }
 
@@ -69,28 +85,33 @@ contract Reports {
     }
 
     function viewSortedUserReports() public view returns (UserReport[] memory) {
-        UserReport[] memory result = new UserReport[](reportCount);
-        uint count = 0;
+        uint activeCount = 0;
         uint userId = users.getIdByWallet(msg.sender);
-        Users.userCondition condition = users.getUserById(userId).condition;
-        require(condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");        for (uint i = reportCount; i>0; i--) {
-            // Si existe un userReport con ese id, lo añadimos al resultado
-            if (userReports[i].id!=0 || bugReports[i].id!=0) { 
-                result[count] = userReports[i];
-                count++;
+        require(users.getUserById(userId).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
+
+        for (uint i = 1; i < reportCount; i++) {
+            if (userReports[i].id != 0) activeCount++;
+        }
+
+        UserReport[] memory result = new UserReport[](activeCount);
+        uint currentIndex = 0;
+        for (uint i = reportCount; i > 0; i--) {
+            if (userReports[i].id != 0 || bugReports[i].id != 0) {
+                result[currentIndex] = userReports[i];
+                currentIndex++;
             }
         }
 
         return result;
     }
 
-    function removeBugReport(uint requestId) public {
-    require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
-    delete bugReports[requestId];
+    function removeBugReport(uint reportId) public {
+        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
+        delete bugReports[reportId];
     }
 
-    function removeUserReport(uint requestId) public {
+    function removeUserReport(uint reportId) public {
         require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
-        delete userReports[requestId];
+        delete userReports[reportId];
     }
 }
