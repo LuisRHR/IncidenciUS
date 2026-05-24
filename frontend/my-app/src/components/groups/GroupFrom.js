@@ -49,12 +49,12 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
                     <Form onSubmit={handleSubmit} className="text-start">
                         <Form.Group className="mb-3" controlId="groupName">
                             <Form.Label className="fw-bold small">Nombre de la Organización o Grupo</Form.Label>
-                            <Form.Control type="text" size="lg" placeholder="Ej: Equipo de Seguridad Beta" value={groupName} onChange={(e) => setGroupName(e.target.value)} required disabled={isSubmitting}/>
+                            <Form.Control type="text" size="lg" placeholder="Ej: Equipo de Seguridad Beta" maxLength={50} value={groupName} onChange={(e) => setGroupName(e.target.value)} required disabled={isSubmitting}/>
                         </Form.Group>
                         
                         <Form.Group className="mb-4" controlId="groupDescription">
                             <Form.Label className="fw-bold small">Descripción (Opcional)</Form.Label>
-                            <Form.Control as="textarea" rows={3} placeholder="Describe el propósito del grupo..." value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSubmitting}/>
+                            <Form.Control as="textarea" rows={3} placeholder="Describe el propósito del grupo..." maxLength={150} value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSubmitting}/>
                         </Form.Group>
                         
                         <div className="d-grid gap-2">

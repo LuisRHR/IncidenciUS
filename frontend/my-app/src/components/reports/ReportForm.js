@@ -82,6 +82,7 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
                         onChange={(e) => setDescription(e.target.value)} 
                         required 
                         disabled={isSubmitting}
+                        maxLength={300}
                     />
                 </Form.Group>
 

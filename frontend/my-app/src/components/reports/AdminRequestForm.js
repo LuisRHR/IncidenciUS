@@ -44,7 +44,7 @@ const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
                 </Form.Group>
                 <Form.Group className="mb-4">
                     <Form.Label className="fw-bold small">Motivo de la Petición (Request Reason)</Form.Label>
-                    <Form.Control as="textarea" rows={4} placeholder="Justifica tu solicitud de rango..." value={requestReason} onChange={(e) => setRequestReason(e.target.value)} required disabled={isSubmitting}/>
+                    <Form.Control as="textarea" rows={4} placeholder="Justifica tu solicitud de rango..." maxLength={120} value={requestReason} onChange={(e) => setRequestReason(e.target.value)} required disabled={isSubmitting}/>
                 </Form.Group>
                 <div className="d-grid gap-2">
                     <Button 

@@ -73,6 +73,7 @@ const Register = ({ wallet, onSuccess }) => {
                             <Form.Control
                                 type="text"
                                 placeholder="Ej: Juan_Dev"
+                                maxLength={25}
                                 value={formData.userName}
                                 onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
                                 disabled={isSubmitting}
@@ -85,6 +86,7 @@ const Register = ({ wallet, onSuccess }) => {
                             <Form.Control
                                 type="email"
                                 placeholder="usuario@informatica.us.es"
+                                maxLength={50}
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 disabled={isSubmitting}
