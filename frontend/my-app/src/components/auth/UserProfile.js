@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, ListGroup, Badge, Row, Col, Modal, Button, Spinner, Alert } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
-const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
+const UserProfile = ({ user, onDeleteProfileSuccess }) => {
   const [showModal, setShowModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
@@ -30,7 +30,7 @@ const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
 
   return (
     <>
-      <Card className="shadow-sm border-0 rounded-4 overflow-hidden mx-auto" style={{ maxWidth: '800px' }}>
+      <Card className="shadow border-0 rounded-4 overflow-hidden mx-auto" style={{ maxWidth: '800px' }}>
         <div className="bg-primary py-5 text-center text-white">
           <h3 className="mb-0">{user.userName}</h3>
           <Badge bg="light" text="dark" className="mt-2">
@@ -41,7 +41,7 @@ const UserProfile = ({ user, userGroup, onDeleteProfileSuccess }) => {
           {error && <Alert variant="danger">{error}</Alert>}
           
           <h5 className="fw-bold mb-4">Detalles de la Cuenta</h5>
-          <ListGroup variant="flush">
+          <ListGroup variant="flush" className="rounded-3 overflow-hidden">
             <ListGroup.Item className="border-2 rounded-2">
               <Row>
                 <Col xs={4} className="text-muted">Wallet Address</Col>

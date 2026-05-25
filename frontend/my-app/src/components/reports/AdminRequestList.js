@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Table, Button, Card, Container, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
-const AdminRequestList = ({ onAcceptSuccess, onDecline }) => {
+const AdminRequestList = ({ onDecline }) => {
     const [processingId, setProcessingId] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -94,9 +94,9 @@ const AdminRequestList = ({ onAcceptSuccess, onDecline }) => {
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
             
-            <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            <Card className="shadow border-0 rounded-4 overflow-hidden">
                 <Table hover responsive className="mb-0 align-middle">
-                    <thead className="table-dark">
+                    <thead className="table-light border-bottom">
                         <tr>
                             <th>ID</th>
                             <th>Wallet Solicitante</th>

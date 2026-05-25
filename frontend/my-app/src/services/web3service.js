@@ -443,9 +443,7 @@ export const Web3Service = {
             const contract = await getContract('GROUPS', true);
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
-            const wallet = signer.address;
-            const wallet = signer.address;
-            
+            const wallet = signer.address;            
             const groupId = await contract.getGroupIdByUserWallet(wallet);
             if (groupId.toString() === "0") return null;     
             const groupData = await contract.getGroupById(groupId);

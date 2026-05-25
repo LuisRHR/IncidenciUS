@@ -20,7 +20,7 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
                 return;
             }
 
-            const result = await Web3Service.createGroup(groupName.trim(), description);
+            await Web3Service.createGroup(groupName.trim(), description);
 
             onCreateGroup();
         } catch (err) {
@@ -32,7 +32,7 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
 
     return (
         <Container className="d-flex justify-content-center">
-            <Card className="shadow-sm border-0 rounded-4 p-2" style={{ maxWidth: '500px', width: '100%' }}>
+            <Card className="shadow border-0 rounded-4 p-2" style={{ maxWidth: '500px', width: '100%' }}>
                 <Card.Body className="p-4 text-center">
 
                     <h3 className="fw-bold mb-3">Crear Nuevo Grupo</h3>
@@ -58,7 +58,7 @@ const GroupForm = ({ onCreateGroup, onCancel }) => {
                         </Form.Group>
                         
                         <div className="d-grid gap-2">
-                            <Button variant="primary" size="lg" type="submit" className="py-3 shadow-sm fw-bold" disabled={isSubmitting}>
+                            <Button variant="primary" size="lg" type="submit" className="py-3 shadow fw-bold" disabled={isSubmitting}>
                                 {isSubmitting ? (
                                     <>
                                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

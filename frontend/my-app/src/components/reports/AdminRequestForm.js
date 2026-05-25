@@ -13,7 +13,7 @@ const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
         setError(null);
 
         try {
-            const result = await Web3Service.createAdminRequest(requestReason);
+            await Web3Service.createAdminRequest(requestReason);
 
             onSubmit();
         } catch (err) {
@@ -24,7 +24,7 @@ const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
     };
 
     return (
-        <Card className="shadow-sm border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '600px' }}>
+        <Card className="shadow border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '600px' }}>
             <h3 className="fw-bold text-center mb-4">Petición de Administrador</h3>
             
             {error && (
@@ -35,15 +35,15 @@ const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
 
             <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small">Nombre de Usuario</Form.Label>
+                    <Form.Label className="fw-semibold small text-muted">Nombre de Usuario</Form.Label>
                     <Form.Control type="text" value={user.userName} disabled />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small">Wallet Address</Form.Label>
+                    <Form.Label className="fw-semibold small text-muted">Dirección de la wallet</Form.Label>
                     <Form.Control type="text" value={wallet} disabled />
                 </Form.Group>
                 <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold small">Motivo de la Petición (Request Reason)</Form.Label>
+                    <Form.Label className="fw-bold small">Motivo de la Petición</Form.Label>
                     <Form.Control as="textarea" rows={4} placeholder="Justifica tu solicitud de rango..." maxLength={120} value={requestReason} onChange={(e) => setRequestReason(e.target.value)} required disabled={isSubmitting}/>
                 </Form.Group>
                 <div className="d-grid gap-2">

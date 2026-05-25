@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, Button, Alert } from "react-bootstrap";
 import { Web3Service } from "../../services/web3service";
 
 const Login = ({ onConnect }) => {
-    const [error, setError] = React.useState(null);
-    const [isConnecting, setIsConnecting] = React.useState(false);
+    const [error, setError] = useState(null);
+    const [isConnecting, setIsConnecting] = useState(false);
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -46,7 +46,7 @@ const Login = ({ onConnect }) => {
     };
 
     return (
-        <Card className="shadow-sm border-0 rounded-4 p-4 text-center">
+        <Card className="shadow border-0 rounded-4 p-4 text-center">
             <Card.Body>
                 <div className="mb-4">
                     <h1 className="fw-bold text-primary">IncidenciUS</h1>
@@ -63,7 +63,7 @@ const Login = ({ onConnect }) => {
                     </Alert>
                 )}
                 
-                <Button variant="primary" size="lg" onClick={handleConnect} disabled={isConnecting} className="w-100 py-3 mb-4 shadow-sm">
+                <Button variant="primary" size="lg" onClick={handleConnect} disabled={isConnecting} className="w-100 py-3 mb-4 shadow">
                     {isConnecting ? (
                         <>
                             <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

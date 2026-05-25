@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
-const IncidenceForm = ({ user, groups = [], onSubmit }) => {
+const IncidenceForm = ({ user, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('0');
@@ -27,7 +27,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
         return;
       }
 
-      const result = await Web3Service.registerIncidence(
+      await Web3Service.registerIncidence(
         title,
         description,
         priorityNum,
@@ -48,7 +48,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
 
   return (
     <Container>
-      <Card className="shadow-sm border-0 rounded-4 p-2 mx-auto" style={{ maxWidth: '700px' }}>
+      <Card className="shadow border-0 rounded-4 p-2 mx-auto" style={{ maxWidth: '700px' }}>
         <Card.Body className="p-4">
           <h3 className="fw-bold mb-4 text-primary">Reportar Incidencia</h3>
           
@@ -104,7 +104,7 @@ const IncidenceForm = ({ user, groups = [], onSubmit }) => {
               />
             </Form.Group>
 
-            <Button variant="primary" type="submit" className="w-100 py-3 fw-bold shadow-sm" disabled={isSubmitting}>
+            <Button variant="primary" type="submit" className="w-100 py-3 fw-bold shadow" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

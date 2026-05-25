@@ -61,7 +61,7 @@ const Register = ({ wallet, onSuccess }) => {
 
   return (
         <Container className="d-flex justify-content-center">
-            <Card className="shadow-sm border-0 rounded-4 p-2" style={{ maxWidth: '500px', width: '100%' }}>
+            <Card className="shadow border-0 rounded-4 p-2" style={{ maxWidth: '500px', width: '100%' }}>
                 <Card.Body className="p-4">
                     <div className="text-center mb-5">
                         <h2 className="fw-bold">Nuevo Perfil</h2>
@@ -103,7 +103,7 @@ const Register = ({ wallet, onSuccess }) => {
                         <Button 
                             variant="primary" 
                             type="submit" 
-                            className="w-100 py-2 fw-bold shadow-sm"
+                            className="w-100 py-2 fw-bold shadow"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (

@@ -27,7 +27,7 @@ const JoinGroupForm = ({ onJoin, onCancel }) => {
     };
 
     return (
-        <Card className="shadow-sm border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '500px' }}>
+        <Card className="shadow border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '500px' }}>
             <div className="text-center mb-4">
                 <h3 className="fw-bold">Unirse a un Grupo</h3>
                 <p className="text-muted small">Debes haber sido invitado previamente por el administrador del grupo.</p>

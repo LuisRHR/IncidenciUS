@@ -32,7 +32,7 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
         }
     };
     return (
-        <Card className="shadow-sm border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '600px' }}>
+        <Card className="shadow border-0 rounded-4 p-4 mx-auto" style={{ maxWidth: '600px' }}>
             <div className="text-center mb-4">
                 <h3 className="fw-bold">Centro de Reportes</h3>
                 <ToggleButtonGroup type="radio" name="reportType" value={reportType} onChange={(val) => setReportType(val)}>

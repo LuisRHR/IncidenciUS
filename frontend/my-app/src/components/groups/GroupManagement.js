@@ -91,12 +91,12 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
   };
 
   return (
-    <Card className="shadow-sm border-0 rounded-4">
-      <Card.Header className="bg-white py-3">
+    <Card className="shadow border-0 rounded-4 overflow-hidden">
+      <Card.Header className="bg-white py-3 border-bottom-0">
         <h5 className="mb-0 fw-bold">Gestionar Grupo: {groupName}</h5>
       </Card.Header>
       <Card.Body>
-        {error && <Alert variant="danger">{error}</Alert>}
+        {error && <Alert variant="danger" className="py-2 small">{error}</Alert>}
         {success && <Alert variant="success">{success}</Alert>}
 
         <Form onSubmit={handleInvite} className="mb-4">
@@ -114,8 +114,8 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
           </InputGroup>
         </Form>
 
-        <Table hover responsive align="middle">
-          <thead className="table-light">
+        <Table hover responsive align="middle" className="mb-0">
+          <thead className="table-dark">
             <tr>
               <th>Miembro</th>
               <th>Wallet</th>
@@ -130,8 +130,8 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
             ) : (
               membersInfo.map((member) => (
                 <tr key={member.wallet || member.uid}>
-                  <td><strong>{member.userName}</strong></td>
-                  <td><code className="small">{member.wallet ? member.wallet.substring(0, 15) : 'N/A'}...</code></td>
+                  <td><span className="fw-bold">{member.userName}</span></td>
+                  <td><code className="small text-muted">{member.wallet ? `${member.wallet.substring(0, 12)}...` : 'N/A'}</code></td>
                   <td className="text-end">
                     <Button 
                       variant="link" 

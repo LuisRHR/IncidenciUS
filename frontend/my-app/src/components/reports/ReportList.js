@@ -105,6 +105,15 @@ const ReportList = ({ onDecline }) => {
         }
     };
 
+    if (isLoading) {
+        return (
+            <Container className="py-5 text-center">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3 text-muted">Consultando registros en la Blockchain...</p>
+            </Container>
+        );
+    }
+
     return (
         <Container className="py-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -115,9 +124,9 @@ const ReportList = ({ onDecline }) => {
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
             
-            <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            <Card className="shadow border-0 rounded-4 overflow-hidden">
                 <Table hover responsive className="mb-0 align-middle">
-                    <thead className="table-light">
+                    <thead className="table-light border-bottom">
                         <tr>
                             <th>Tipo</th>
                             <th>Emisor</th>

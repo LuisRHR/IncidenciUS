@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Badge, Alert, ListGroup, Form, Button, Spinner } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
-const UserIncidencesList = ({ user, onCancel }) => {
+const UserIncidencesList = ({ onCancel }) => {
     const [incidences, setIncidences] = useState([]);
     const [filteredIncidences, setFilteredIncidences] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +81,7 @@ const UserIncidencesList = ({ user, onCancel }) => {
             {error && <Alert variant="danger">{error}</Alert>}
 
             {/* Filtro de fechas */}
-            <Card className="mb-4 shadow-sm border-0 rounded-4">
+            <Card className="mb-4 shadow border-0 rounded-4">
                 <Card.Body>
                     <h5 className="fw-bold mb-3">Filtrar por Rango de Fechas</h5>
                     <Row>
@@ -140,9 +140,9 @@ const UserIncidencesList = ({ user, onCancel }) => {
                 <Row>
                     {filteredIncidences.map((inc, index) => (
                         <Col md={6} lg={4} className="mb-4" key={index}>
-                            <Card className="h-100 shadow-sm border-2 rounded-3 overflow-hidden">
-                                <Badge bg="success" className="mx-2 mt-2">#{inc.id}</Badge>
-                                <Card.Header className="bg-white border-2 pt-3 d-flex justify-content-between align-items-center">
+                            <Card className="h-100 shadow border-0 rounded-4 overflow-hidden">
+                                <div className="px-3 pt-3"><Badge bg="success">#{inc.id}</Badge></div>
+                                <Card.Header className="bg-white border-0 pt-2 d-flex justify-content-between align-items-center">
                                     <Badge bg={inc.priority === 2 ? 'danger' : inc.priority === 1 ? 'warning' : 'info'}>
                                         Prioridad {inc.priority === 2 ? 'Alta' : inc.priority === 1 ? 'Media' : 'Baja'}
                                     </Badge>
@@ -158,9 +158,9 @@ const UserIncidencesList = ({ user, onCancel }) => {
                                         {inc.description}
                                     </Card.Text>
                                     
-                                    <ListGroup variant="flush" className="small bg-light rounded-3 border">
+                                    <ListGroup variant="flush" className="small bg-light rounded-3 overflow-hidden">
                                         <ListGroup.Item className="bg-transparent py-1">
-                                            <strong>De:</strong> <code className="text-alert">{inc.senderUserName}/{inc.senderEmail}</code>
+                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}/{inc.senderEmail}</code>
                                         </ListGroup.Item>
                                         <ListGroup.Item className="bg-transparent py-1">
                                             <strong>Para:</strong> {inc.userReceiver ? `Usuario: ${inc.userReceiver}` : inc.groupReceiver ? `Grupo: ${inc.groupReceiver}` : 'N/A'}
