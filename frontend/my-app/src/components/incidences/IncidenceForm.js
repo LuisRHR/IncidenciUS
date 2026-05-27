@@ -2,6 +2,17 @@ import React, { useState } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente de formulario para el registro de nuevas incidencias.
+ * Soporta el envío dirigido tanto a usuarios individuales como a grupos de trabajo.
+ * 
+ * El componente gestiona la captura de datos, validación de fechas (no futuras)
+ * y delega el cifrado y la transacción al servicio Web3.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.user - Objeto del usuario remitente (contiene userName y email).
+ * @param {Function} props.onSubmit - Callback ejecutado tras un envío exitoso a la Blockchain.
+ */
 const IncidenceForm = ({ user, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -13,6 +24,14 @@ const IncidenceForm = ({ user, onSubmit }) => {
   const [error, setError] = useState(null);
   const today = new Date().toISOString().split('T')[0];
 
+  /**
+   * Gestiona el envío de la incidencia.
+   * Determina el destinatario (Usuario o Grupo).
+   * Realiza validaciones de negocio local (fecha).
+   * Invoca el registro en la Blockchain con cifrado híbrido.
+   * 
+   * @param {Event} e - Evento de formulario.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);

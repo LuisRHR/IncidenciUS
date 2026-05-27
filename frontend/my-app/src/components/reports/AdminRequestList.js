@@ -2,12 +2,26 @@ import React, { useCallback, useState } from 'react';
 import { Table, Button, Card, Container, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Vista de administración para la gestión de solicitudes de rango.
+ * Permite a los administradores actuales "Ascender" a nuevos usuarios
+ * basándose en su justificación.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onDecline - Callback para cerrar la vista.
+ * 
+ * @returns {JSX.Element} La lista de peticiones pendientes.
+ */
 const AdminRequestList = ({ onDecline }) => {
     const [processingId, setProcessingId] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [requests, setRequests] = useState([]);
     
+    /**
+     * Recupera todas las peticiones desde el Smart Contract.
+     * Filtra registros nulos o direcciones de origen inválidas.
+     */
     const loadRequests = useCallback(async () => {
         setError(null);
         try {
@@ -30,6 +44,11 @@ const AdminRequestList = ({ onDecline }) => {
         loadRequests();
     }, [loadRequests]);
 
+    /**
+     * Acepta una solicitud.
+     * Realiza dos transacciones: una para cambiar el rango del usuario en `USERS`
+     * y otra para eliminar la petición en `ADMIN_REQUESTS`.
+     */
     const handleAccept = async (req) => {
         if (!req.userWallet) {
             setError("La wallet del usuario no es válida.");
@@ -67,6 +86,10 @@ const AdminRequestList = ({ onDecline }) => {
         }
     };
 
+    /**
+     * Deniega una solicitud.
+     * Simplemente elimina la petición del Smart Contract sin cambiar el rango del usuario.
+     */
     const handleReject = async (req) => {
         if (!window.confirm("¿Estás seguro de que quieres denegar esta solicitud?")) return;
 

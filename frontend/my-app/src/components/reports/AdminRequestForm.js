@@ -2,11 +2,28 @@ import React, { useState } from 'react';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente de formulario para solicitar el rango de Administrador de Sistema.
+ * Envía una petición pública (no cifrada) a la Blockchain para que los 
+ * administradores actuales puedan evaluarla.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.user - Datos del usuario solicitante.
+ * @param {string} props.wallet - Dirección de la wallet del solicitante.
+ * @param {Function} props.onSubmit - Callback tras enviar la petición con éxito.
+ * @param {Function} props.onCancel - Callback para cancelar y volver atrás.
+ * 
+ * @returns {JSX.Element} El formulario de petición de admin.
+ */
 const AdminRequestForm = ({ user, wallet, onSubmit, onCancel }) => {
     const [requestReason, setRequestReason] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
+    /**
+     * Procesa el envío de la solicitud.
+     * Registra la wallet y el motivo en el Smart Contract `ADMIN_REQUESTS`.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);

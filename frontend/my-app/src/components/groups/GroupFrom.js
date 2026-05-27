@@ -2,12 +2,26 @@ import React, { useState } from 'react';
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente para la creación de un nuevo grupo de trabajo.
+ * Al crear un grupo, se genera una clave AES única que se utilizará para cifrar
+ * las incidencias privadas de los miembros.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onCreateGroup - Callback ejecutado tras crear el grupo con éxito.
+ * @param {Function} props.onCancel - Callback para cancelar y volver al dashboard.
+ */
 const GroupForm = ({ onCreateGroup, onCancel }) => {
     const [groupName, setGroupName] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
+    /**
+     * Procesa la creación del grupo.
+     * Valida los datos.
+     * Llama al servicio Web3Service para generar claves y persistir en Blockchain.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);

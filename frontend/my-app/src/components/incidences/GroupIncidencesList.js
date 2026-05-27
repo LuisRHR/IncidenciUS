@@ -2,6 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Badge, Alert, ListGroup, Form, Button, Spinner } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
+/**
+ * Componente que muestra las incidencias compartidas de un grupo de trabajo.
+ * Recupera incidencias cifradas con la clave simétrica del grupo (Group AES Key).
+ * 
+ * Solo los miembros activos con la llave del grupo pueden visualizar este contenido.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.userGroup - Datos del grupo al que pertenece el usuario.
+ * @param {Function} props.onCancel - Callback para volver atrás.
+ */
 const GroupIncidencesList = ({ userGroup, onCancel }) => {
     const [incidences, setIncidences] = useState([]);
     const [filteredIncidences, setFilteredIncidences] = useState([]);
@@ -10,6 +20,11 @@ const GroupIncidencesList = ({ userGroup, onCancel }) => {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
+    /**
+     * Carga las incidencias del grupo.
+     * Requiere que la llave AES del grupo esté presente en la sesión para el descifrado.
+     * @async
+     */
     const loadIncidences = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -38,6 +53,9 @@ const GroupIncidencesList = ({ userGroup, onCancel }) => {
         loadIncidences();
     }, [loadIncidences]);
 
+    /**
+     * Filtra las incidencias del grupo por un rango temporal.
+     */
     const applyFilter = () => {
         if (!fromDate || !toDate) {
             alert("Por favor selecciona ambas fechas.");
@@ -60,6 +78,9 @@ const GroupIncidencesList = ({ userGroup, onCancel }) => {
         setFilteredIncidences(filtered);
     };
 
+    /**
+     * Restablece el listado completo sin filtros.
+     */
     const resetFilter = () => {
         setFromDate('');
         setToDate('');

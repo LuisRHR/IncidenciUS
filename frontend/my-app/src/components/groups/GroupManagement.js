@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Form, InputGroup, Alert, Spinner } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Panel de administración de un grupo.
+ * Permite al administrador del grupo invitar a nuevos usuarios, expulsar miembros
+ * y disolver el grupo por completo.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {string} props.groupName - Nombre del grupo actual.
+ * @param {Array<number|Object>} props.members - Lista de IDs de miembros o sus objetos de información.
+ * @param {Function} props.onMemberRemoved - Callback tras expulsar a un miembro con éxito.
+ * @param {Function} props.onGroupDeleted - Callback tras la disolución del grupo.
+ * 
+ * @returns {JSX.Element} El panel de gestión de grupo.
+ */
 const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }) => {
   const [searchName, setSearchName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,6 +23,10 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
   const [membersInfo, setMembersInfo] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  /**
+   * Efecto para cargar la información detallada de los miembros desde IPFS
+   * cuando solo se dispone de sus IDs (UIDs).
+   */
   useEffect(() => {
     const fetchMembersInfo = async () => {
       if (!members || members.length === 0) {
@@ -36,6 +53,11 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
     fetchMembersInfo();
   }, [members]);
 
+  /**
+   * Gestiona la invitación de un nuevo usuario al grupo.
+   * Recupera la clave pública del invitado y cifra la clave AES del grupo para él.
+   * @param {Event} e - Evento de formulario.
+   */
   const handleInvite = async (e) => {
     e.preventDefault();
     if (!searchName.trim()) return;
@@ -55,6 +77,10 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
     }
   };
 
+  /**
+   * Gestiona la expulsión de un miembro del grupo.
+   * @param {string} userName - Nombre del usuario a expulsar.
+   */
   const handleRemove = async (userName) => {
     if (!window.confirm(`¿Estás seguro de expulsar a ${userName}?`)) return;
     
@@ -71,6 +97,10 @@ const GroupManagement = ({ groupName, members, onMemberRemoved, onGroupDeleted }
     }
   };
 
+  /**
+   * Ejecuta la disolución completa del grupo.
+   * Esta acción es irreversible y elimina los registros de membresía en la Blockchain.
+   */
   const handleDeleteGroup = async () => {
     if (!window.confirm(`¿Estás seguro de eliminar el grupo ${groupName}? Esta acción no se puede deshacer.`)) return;
     setIsSubmitting(true);

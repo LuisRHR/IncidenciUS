@@ -2,6 +2,17 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { Table, Badge, Card, Container, Button, Spinner, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Panel de gestión de reportes para administradores de sistema.
+ * Muestra reportes de bugs y denuncias de usuarios de forma cronológica inversa,
+ * en base al ID del reporte.
+ * 
+ * Implementa el descifrado de datos recuperados de IPFS utilizando la 
+ * clave privada del administrador actual.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onDecline - Callback para volver al dashboard.
+ */
 const ReportList = ({ onDecline }) => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -9,8 +20,11 @@ const ReportList = ({ onDecline }) => {
     const [processingId, setProcessingId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    /**
+     * Carga y descifra todos los reportes (Bugs y Usuarios).
+     */
     const loadReports = useCallback(async () => {
-        setIsLoading(true); // Empezamos a cargar
+        setIsLoading(true);
         setError(null);
         try {
             const [bugReps, userReps] = await Promise.all([
@@ -27,13 +41,13 @@ const ReportList = ({ onDecline }) => {
             const allReports = [...cleanBugReps, ...cleanUserReps];
             allReports.sort((a, b) => Number(b.id) - Number(a.id));
 
-            setReports(allReports); // Seteamos el array procesado directamente
+            setReports(allReports);
         } catch (err) {
             console.error("Error loading reports:", err);
             setError("Error al conectar con la Blockchain para obtener reportes.");
             setReports([]);
         } finally {
-            setIsLoading(false); // Terminamos de cargar
+            setIsLoading(false);
         }
     }, []);
 
@@ -41,7 +55,12 @@ const ReportList = ({ onDecline }) => {
         loadReports();
     }, [loadReports]);
 
-
+    /**
+     * Procesa un reporte de usuario aceptando la denuncia.
+     * Bloquea al usuario denunciado en el contrato `USERS`.
+     * Elimina el reporte auditado del contrato `REPORTS`.
+     * @param {Object} report - El objeto del reporte con el nombre del usuario a bloquear.
+     */
     const handleAcceptUserReport = async (report) => {
         const nameToBlock = report.userNameReported; 
         
@@ -83,6 +102,10 @@ const ReportList = ({ onDecline }) => {
         }
     };
 
+    /**
+     * Descarta un reporte sin tomar medidas punitivas.
+     * Determina el tipo de reporte para llamar a la función de borrado correcta en el contrato.
+     */
     const handleDismissReport = async (report) => {
         if (!window.confirm("¿Estás seguro de que quieres descartar este reporte? Se eliminará permanentemente.")) return;
 

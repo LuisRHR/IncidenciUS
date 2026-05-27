@@ -2,6 +2,17 @@ import { useState } from "react";
 import { Container, Card, Form, Button, Alert } from "react-bootstrap";
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente de Registro para nuevos usuarios en la red IncidenciUS.
+ * Permite capturar la identidad del usuario, cifrar sus datos sensibles,
+ * subirlos a IPFS y persistir la referencia (CID) y el hash de identidad en la Blockchain.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {string} props.wallet - La dirección de la wallet del usuario detectada por MetaMask.
+ * @param {Function} props.onSuccess - Callback ejecutado tras un registro confirmado en la red.
+ * 
+ * @returns {JSX.Element} El componente de registro renderizado.
+ */
 const Register = ({ wallet, onSuccess }) => {
     const [formData, setFormData] = useState({
         userName: "",
@@ -10,11 +21,22 @@ const Register = ({ wallet, onSuccess }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
+    /**
+     * Valida si el formato del correo electrónico cumple con el estándar.
+     * @param {string} email - Correo a validar.
+     * @returns {boolean} True si el formato es válido.
+     */
     const validateEmailFormat = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
+    /**
+     * Procesa el formulario de registro.
+     * Inicializa sesión (Firma).
+     * Cifra y sube datos a IPFS.
+     * Ejecuta la transacción en el contrato USERS.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);

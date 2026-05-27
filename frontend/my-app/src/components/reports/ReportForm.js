@@ -2,6 +2,20 @@ import React, { useState } from 'react';
 import { Card, Form, Button, ToggleButtonGroup, ToggleButton, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Centro de reportes para la comunicación segura con los administradores.
+ * Permite enviar dos tipos de reportes:
+ * Bug: Errores técnicos del sistema.
+ * User: Denuncias de comportamiento contra otros usuarios.
+ * 
+ * Aplica cifrado híbrido multinivel: el contenido se cifra con AES y la clave AES 
+ * se cifra asimétricamente para cada administrador del sistema.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.user - Usuario emisor.
+ * @param {Function} props.onSubmit - Callback tras procesar el reporte.
+ * @param {Function} props.onCancel - Callback para salir del componente.
+ */
 const ReportForm = ({ user, onSubmit, onCancel }) => {
     const [reportType, setReportType] = useState('bug');
     const [title, setTitle] = useState('');
@@ -12,6 +26,11 @@ const ReportForm = ({ user, onSubmit, onCancel }) => {
     const [error, setError] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    /**
+     * Gestiona el envío del reporte.
+     * Sube las imágenes de prueba a IPFS y delega la lógica de cifrado 
+     * de llaves por administrador al servicio Web3.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return; // Evita doble envío manual

@@ -2,11 +2,26 @@ import React, { useState } from 'react';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente de formulario para unirse a un grupo existente.
+ * El usuario debe ingresar el nombre del grupo. El sistema validará en la Blockchain
+ * si existe una invitación pendiente y recuperará la clave de acceso del grupo.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onJoin - Callback ejecutado tras unirse con éxito. Recibe un objeto con el nombre y hash de tx.
+ * @param {Function} props.onCancel - Callback para cancelar la operación y volver atrás.
+ * 
+ * @returns {JSX.Element} El formulario de unión a grupo.
+ */
 const JoinGroupForm = ({ onJoin, onCancel }) => {
     const [groupName, setGroupName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
+    /**
+     * Procesa la solicitud de unión.
+     * Invoca la función `userJoined` en el contrato inteligente de Grupos.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);

@@ -6,7 +6,11 @@ if (typeof window !== 'undefined') {
     window.Buffer = window.Buffer || Buffer;
 }
 
-// ABI de los contratos 
+/**
+ * ABI simplificados de los contratos inteligentes para interacción desde el frontend.
+ * Solo se incluyen las funciones necesarias para las operaciones del frontend.
+ * Cualquier cambio en los contratos inteligentes debe reflejarse aquí para mantener la compatibilidad.
+ */
 const USERS_ABI = [
     "function registerUser( bytes32 userNameHashed,  bytes32 emailHashed, string memory userInfoCID, string memory publicKey) public",
     "function login() public view returns (tuple(uint uid, bytes32 userNameHash,  bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
@@ -59,19 +63,39 @@ const ADMIN_REQUESTS_ABI = [
     "function removeRequest(uint requestId) public"
 ];
 
+/**
+ * Variables de entorno para configuración de IPFS y Pinata.
+ * Actualmente se encuentran en un archivo .env en la raíz del proyecto por privacidad,
+ * pero en un futuro puede que vayan diretamente aquí utilizando otra cuenta de Pinata
+ * que no sea la mía personal, para evitar exponer tokens de acceso en el frontend.
+ */
 const IPFS_GATEWAY = process.env.REACT_APP_IPFS_GATEWAY;
 const IPFS_UPLOAD_URL = process.env.REACT_APP_IPFS_UPLOAD_URL;
 const IPFS_FILE_UPLOAD_URL = process.env.REACT_APP_IPFS_FILE_UPLOAD_URL;
 const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
 
-const getSessionKey = () => sessionStorage.getItem('cached_priv_key');
+/**
+ * Obtiene la clave privada determinista almacenada en la sesión volátil.
+ * @returns {string|null} Clave privada en formato hexadecimal (seed criptográfica) o null.
+ */
+ const getSessionKey = () => sessionStorage.getItem('cached_priv_key');
 
+/**
+ * Realiza el cifrado simétrico de un objeto de datos mediante el estándar AES-256.
+ * @param {Object} dataObject - Objeto de datos en texto plano.
+ * @returns {string|Object} El string cifrado resultante o el objeto original si no hay clave de sesión.
+ */
 const encryptData = (dataObject) => {
     const key = getSessionKey();
     if (!key) return dataObject;
     return CryptoJS.AES.encrypt(JSON.stringify(dataObject), key).toString();
 };
 
+/**
+ * Descifra una cadena cifrada con AES utilizando la clave de sesión.
+ * @param {string} encryptedString - La cadena de texto cifrada.
+ * @returns {Object} El objeto de datos descifrado o un objeto de error si falla.
+ */
 const decryptData = (encryptedString) => {
     const key = getSessionKey();
     if (!key) return { error: "Sesión no iniciada para descifrado simetrico" };
@@ -84,6 +108,13 @@ const decryptData = (encryptedString) => {
     }
 };
 
+/**
+ * Instancia un contrato de ethers.js basado en el tipo solicitado.
+ * @param {('USERS'|'GROUPS'|'REPORTS'|'INCIDENCES'|'ADMIN_REQUESTS')} contractType - El identificador del contrato.
+ * @param {boolean} [withSigner=false] - Define si el contrato debe estar conectado a un firmante (para transacciones).
+ * @throws {Error} Si MetaMask no está detectado o la dirección no está configurada.
+ * @returns {Promise<ethers.Contract>} Una instancia del contrato de Ethers.
+ */
 const getContract = async (contractType, withSigner = false) => {
     if (!window.ethereum) throw new Error("MetaMask no detectado");
 
@@ -108,6 +139,14 @@ const getContract = async (contractType, withSigner = false) => {
     return new ethers.Contract(contractAddress, abi, provider);
 };
 
+/**
+ * Sube datos JSON a IPFS a través de Pinata o simula la subida en local.
+ * Tras el commit de comentarios voy a eliminar la simulación local y dejar solo la subida real a IPFS, pero por ahora lo dejo.
+ * @param {Object} data - Los datos a subir.
+ * @param {string|null} [pinataJwt=null] - El token JWT de Pinata.
+ * @throws {Error} Si la subida falla.
+ * @returns {Promise<string>} El CID (Hash) de IPFS de los datos subidos.
+ */
 const uploadToIPFS = async (data, pinataJwt = null) => {
     try {
         const payload = data;
@@ -133,6 +172,13 @@ const uploadToIPFS = async (data, pinataJwt = null) => {
         throw error;
     }
 };
+
+/**
+ * Sube múltiples archivos a IPFS.
+ * Para las imagenes de los reports.
+ * @param {FileList|File[]} files - Lista de archivos a subir.
+ * @returns {Promise<string[]>} Array de CIDs (hashes) de los archivos subidos.
+ */
 const uploadFilesToIPFS = async (files) => {
     if (!files || files.length === 0) return [];
     if (!process.env.REACT_APP_PINATA_JWT) {
@@ -174,6 +220,11 @@ const uploadFilesToIPFS = async (files) => {
     return uploadedCIDs;
 };  
 
+/**
+ * Recupera datos de IPFS dado un CID.
+ * @param {string} cid - El CID de IPFS.
+ * @returns {Promise<Object|null>} Los datos recuperados o null si ocurre un error.
+ */
 const fetchFromIPFS = async (cid) => {
     try {
         if (!cid || cid === "N/A" || cid === "") return { error: "No CID" };
@@ -192,6 +243,10 @@ const fetchFromIPFS = async (cid) => {
     }
 };
 
+/**
+ * Obtiene la clave privada de la caché o de la sesión.
+ * @returns {string|null} La clave privada.
+ */
 const getPrivateKey = () => {
     if (!cachedPrivateKey) {
         cachedPrivateKey = sessionStorage.getItem('cached_priv_key');
@@ -199,11 +254,27 @@ const getPrivateKey = () => {
     return cachedPrivateKey;
 };
 
+/**
+ * Genera un hash keccak256 de un valor dado.
+ * @param {string} value - El valor a hashear.
+ * @returns {string} El hash resultante.
+ */
 const hashValue = (value) => ethers.id(value);
+
+/** @type {string|null} Clave privada persistida en memoria durante la ejecución */
 let cachedPrivateKey = null;
 
+/**
+ * Servicio principal para interactuar con la Web3, Contratos Inteligentes e IPFS.
+ */
 export const Web3Service = {
 
+    /**
+     * Establece la sesión criptográfica mediante la firma digital de un mensaje.
+     * Deriva una clave privada determinista a partir de la firma y genera el par de claves secp256k1
+     * necesario para el cifrado asimétrico ECIES.
+     * @returns {Promise<boolean>} True si la sesión se inició con éxito.
+     */
     initSession: async () => {
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -217,7 +288,8 @@ export const Web3Service = {
             cachedPrivateKey = privKey;
             sessionStorage.setItem('cached_priv_key', privKey);
 
-            // Derivación de clave pública para el registro
+            // Derivación de clave pública para el registro.
+            // Permite que otros usuarios cifren datos para este usuario.
             const publicKey = EthCrypto.publicKeyByPrivateKey(privKey.replace('0x', ''));
             sessionStorage.setItem('user_pub_key', publicKey);
 
@@ -227,6 +299,11 @@ export const Web3Service = {
         }
     },
     
+    /**
+     * Realiza el login del usuario consultando el contrato inteligente.
+     * Recupera y descifra los datos del perfil desde IPFS.
+     * @returns {Promise<Object>} Objeto con el estado del login y datos del usuario.
+     */
     login: async () => {
         try {
             const contract = await getContract('USERS', true);  
@@ -257,6 +334,14 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Registra un nuevo usuario en la plataforma.
+     * Persiste los datos sensibles en IPFS (cifrados) y vincula el CID y la clave pública en la blockchain.
+     * @param {string} userName - Nombre de usuario (texto plano).
+     * @param {string} email - Correo electrónico (texto plano).
+     * @param {string} publicKey - Clave pública generada en initSession.
+     * @returns {Promise<Object>} Resultado de la transacción y CID del perfil.
+     */
     register: async (userName, email, publicKey) => {
         try {
             const contract = await getContract('USERS', true);
@@ -279,6 +364,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Elimina el perfil del usuario actual de los contratos inteligentes y limpia el almacenamiento local.
+     * @throws {Error} Si la transacción de eliminación falla.
+     * @returns {Promise<Object>} Éxito de la operación.
+     */
     deleteUser: async () => {
         try {
             const contractUsers = await getContract('USERS', true);
@@ -307,6 +397,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Bloquea a un usuario (función de administrador).
+     * @param {string} userNameToBlock - Nombre del usuario a bloquear.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     blockUser: async (userNameToBlock) => {
         try {
             const contract = await getContract('USERS', true);
@@ -318,6 +413,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene los datos del usuario actualmente conectado.
+     * @returns {Promise<Object>} Datos del usuario o estado de no existencia.
+     */
     getActualUser: async () => {
         try {
             const contract = await getContract('USERS', true);
@@ -348,6 +447,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Otorga rango de administrador de sistema a una dirección de wallet.
+     * @param {string} userAddress - Dirección del usuario.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     giveUserAdminStatus: async (userAddress) => {
         try {
             const contract = await getContract('USERS', true);
@@ -359,6 +463,13 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Crea un nuevo grupo en el sistema.
+     * Genera una clave AES aleatoria para el grupo y la cifra con la clave pública del creador.
+     * @param {string} groupName - Nombre del grupo.
+     * @param {string} [description=""] - Descripción opcional.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     createGroup: async (groupName, description = "") => {
         try {
             const contract = await getContract('GROUPS', true);     
@@ -375,6 +486,12 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Invita a un usuario a un grupo existente.
+     * Cifra la clave AES del grupo con la clave pública del invitado.
+     * @param {string} userNameToInvite - Nombre del usuario a invitar.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     inviteUserToGroup: async (userNameToInvite) => {
         try {
             const groupsContract = await getContract('GROUPS', true);
@@ -395,6 +512,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Acepta una invitación y se une formalmente al grupo en el contrato.
+     * @param {string} groupName - Nombre del grupo.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     joinGroup: async (groupName) => {
         try {
             const contract = await getContract('GROUPS', true);
@@ -406,6 +528,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Elimina a un usuario de un grupo.
+     * @param {string} userNameToRemove - Nombre del usuario a eliminar.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     removeUserFromGroup: async (userNameToRemove) => {
         try {
             const contract = await getContract('GROUPS', true);
@@ -417,6 +544,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Disuelve el grupo actual (solo administradores del grupo).
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     deleteGroup: async () => {
         try {
             const contract = await getContract('GROUPS', true);
@@ -428,6 +559,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene los IDs de los miembros de un grupo.
+     * @param {number} groupId - ID del grupo.
+     * @returns {Promise<number[]>} Lista de UIDs.
+     */
     getGroupMembers: async (groupId) => {
         try {
             const contract = await getContract('GROUPS', true);
@@ -438,6 +574,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene la información completa del grupo al que pertenece el usuario actual.
+     * Si la clave AES del grupo no está en sesión, intenta recuperarla y descifrarla.
+     * @returns {Promise<Object|null>} Datos del grupo o null.
+     */
     getActualGroup: async () => {
         try {
             const contract = await getContract('GROUPS', true);
@@ -468,6 +609,11 @@ export const Web3Service = {
         } catch (error) { return null; }
     },
 
+    /**
+     * Obtiene información detallada (desde IPFS) de una lista de miembros.
+     * @param {number[]} memberIds - Array de UIDs de usuarios.
+     * @returns {Promise<Object[]>} Lista de objetos de usuario con nombre, email, etc.
+     */
     getMembersInfo: async (memberIds) => {
         try {
             const contract = await getContract('USERS', true);
@@ -500,6 +646,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene una lista de todos los administradores del sistema registrados.
+     * @returns {Promise<Object[]>} Lista de objetos con wallet y clave pública de los admins.
+     */
     getAllAdmins: async () => {
         try {
             const contract = await getContract('USERS', false);
@@ -518,6 +668,16 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Crea un reporte de error (Bug Report).
+     * Implementa un modelo de cifrado múltiple (fan-out): cifra el contenido con AES y luego "envuelve"
+     * la clave para cada administrador mediante sus claves públicas registradas.
+     * @param {string} userSender - Identificador del remitente.
+     * @param {string} title - Título del reporte.
+     * @param {string} description - Descripción del bug.
+     * @param {FileList|File[]} files - Archivos adjuntos como prueba.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     createBugReport: async (userSender, title, description, files) => {
         try {
             const contract = await getContract('REPORTS', true);
@@ -543,6 +703,11 @@ export const Web3Service = {
             return await tx.wait();
         } catch (error) { throw error; }
     },
+
+    /**
+     * Recupera y descifra los reportes de bugs (solo para administradores).
+     * @returns {Promise<Object[]>} Lista de reportes descifrados.
+     */
     viewSortedBugReports: async () => {
         try {
             const privKey = getPrivateKey();
@@ -570,6 +735,17 @@ export const Web3Service = {
 
 
 
+    /**
+     * Crea un reporte sobre el comportamiento indebido de un usuario.
+     * Utiliza un esquema de encapsulación de claves (KEM) para garantizar que solo los administradores
+     * autorizados puedan acceder a la información sensible del reporte.
+     * @param {string} userSender - Identificador del remitente.
+     * @param {string} userNameToReport - Usuario denunciado.
+     * @param {string} email - Email de contacto.
+     * @param {string} description - Detalles de la denuncia.
+     * @param {FileList|File[]} files - Pruebas adjuntas.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     createUserReport: async (userSender, userNameToReport, email, description, files) => {
         try {
             const contract = await getContract('REPORTS', true);
@@ -596,6 +772,10 @@ export const Web3Service = {
         } catch (error) { console.error(error); throw error; }
     },
 
+    /**
+     * Recupera y descifra los reportes de usuarios (solo para administradores).
+     * @returns {Promise<Object[]>} Lista de reportes descifrados.
+     */
     viewSortedUserReports: async () => {
         try {
             const privKey = cachedPrivateKey || sessionStorage.getItem('cached_priv_key');
@@ -623,6 +803,11 @@ export const Web3Service = {
         } catch (error) { return []; }
     },
 
+    /**
+     * Elimina un reporte de usuario del contrato.
+     * @param {number} reportId - ID del reporte.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     removeUserReport: async (reportId) => {
         try {
             const contract = await getContract('REPORTS', true);
@@ -634,6 +819,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Elimina un reporte de bug del contrato.
+     * @param {number} reportId - ID del reporte.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     removeBugReport: async (reportId) => {
         try {
             const contract = await getContract('REPORTS', true);
@@ -645,6 +835,19 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Registra una nueva incidencia utilizando un esquema de cifrado híbrido.
+     * El contenido se cifra con una clave AES efímera. Para destinatarios individuales, esta clave se 
+     * cifra asimétricamente (ECIES). Para grupos, se cifra simétricamente con la clave maestra del grupo.
+     * @param {string} title - Título de la incidencia.
+     * @param {string} description - Cuerpo de la incidencia.
+     * @param {number} priority - Nivel de prioridad (0-3).
+     * @param {string} [userReceiver=""] - Nombre del usuario destinatario (opcional).
+     * @param {string} [groupReceiver=""] - Nombre del grupo destinatario (opcional).
+     * @param {string} [userDate=""] - Fecha de creación.
+     * @param {string} [senderUserName=""] - Nombre del remitente.
+     * @param {string} [senderEmail=""] - Email del remitente.
+     */
     registerIncidence: async (title, description, priority, userReceiver = "", groupReceiver = "", userDate = "", senderUserName = "", senderEmail = "") => {
         try {
             const contract = await getContract('INCIDENCES', true);
@@ -688,6 +891,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene y descifra las incidencias enviadas directamente al usuario actual.
+     * @returns {Promise<Object[]>} Lista de incidencias descifradas.
+     */
     getUserIncidences: async () => {
         try {
             const privKey = cachedPrivateKey || sessionStorage.getItem('cached_priv_key');
@@ -718,6 +925,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Obtiene y descifra las incidencias pertenecientes al grupo del usuario actual.
+     * @returns {Promise<Object[]>} Lista de incidencias de grupo descifradas.
+     */
     getGroupIncidences: async () => {
         try {
             const groupAESKey = sessionStorage.getItem('current_group_aes');
@@ -743,6 +954,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Crea una solicitud formal para obtener el rol de administrador.
+     * @param {string} requestReason - Motivo de la solicitud.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     createAdminRequest: async (requestReason) => {
         try {
             const contract = await getContract('ADMIN_REQUESTS', true);
@@ -755,6 +971,10 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Lista todas las peticiones de administración pendientes.
+     * @returns {Promise<Object[]>} Lista de peticiones.
+     */
     viewAdminRequests: async () => {
         try {
             const contract = await getContract('ADMIN_REQUESTS', false);
@@ -766,6 +986,11 @@ export const Web3Service = {
         }
     },
 
+    /**
+     * Elimina una petición de administración (al ser procesada).
+     * @param {number} requestId - ID de la petición.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
     removeAdminRequest: async (requestId) => {
         try {
             const contract = await getContract('ADMIN_REQUESTS', true);

@@ -19,15 +19,46 @@ import AdminRequestForm from './components/reports/AdminRequestForm';
 import AdminRequestList from './components/reports/AdminRequestList';
 import JoinGroupForm from './components/groups/JoinGroupForm';
 
+/**
+ * Componente principal de la aplicación IncidenciUS.
+ * Gestiona el estado global de la aplicación, la navegación entre vistas
+ * y la sincronización de datos del usuario y grupo con la Blockchain.
+ * 
+ * @returns {JSX.Element} El componente raíz de la aplicación.
+ */
 function App() {
-  // Estados principales de la aplicación
+  /**
+   * Estado que controla la vista actual de la aplicación.
+   * @type {string}
+   */
   const [view, setView] = useState('welcome'); 
-  const [user, setUser] = useState(null);       
+  /**
+   * Estado que almacena los datos del usuario actual.
+   * @type {Object|null}
+   */
+  const [user, setUser] = useState(null);
+  /**
+   * Estado que almacena la dirección de la wallet del usuario.
+   * @type {string}
+   */
   const [wallet, setWallet] = useState("");
-  const [userGroup, setUserGroup] = useState(null); 
+  /**
+   * Estado que almacena los datos del grupo al que pertenece el usuario.
+   * @type {Object|null}
+   */
+  const [userGroup, setUserGroup] = useState(null);
+  /**
+   * Estado que almacena la lista de miembros del grupo actual.
+   * @type {Array<Object>}
+   */
   const [allMembers, setAllMembers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
+  // const [allUsers, setAllUsers] = useState([]); // Comentado porque no se usa
 
+  /**
+   * Función asíncrona para refrescar los datos del usuario y del grupo
+   * desde la Blockchain. Se ejecuta al inicio y periódicamente.
+   * @type {Function}
+   */
   const refreshData = useCallback(async () => {
       try {
         const sessionKey = sessionStorage.getItem('session_key');
@@ -50,16 +81,24 @@ function App() {
       }
     }, []);
 
+    /**
+     * Efecto que carga los datos iniciales y establece un intervalo de refresco.
+     */
     useEffect(() => {
       refreshData();
       const interval = setInterval(() => {
         refreshData();
       }, 10000); 
 
-
       return () => clearInterval(interval);
     }, [refreshData]);
 
+  /**
+   * Manejador para el éxito del proceso de login.
+   * Establece la dirección de la wallet, los datos del usuario y, si aplica, los datos del grupo.
+   * @param {string} address - Dirección de la wallet conectada.
+   * @param {Object|null} userData - Datos del usuario obtenidos de la Blockchain, o null si no está registrado.
+   */
   const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
     if (userData && userData.exists) {
@@ -82,25 +121,41 @@ function App() {
     }
   };
 
+  /**
+   * Manejador para el éxito del proceso de registro.
+   * Notifica al usuario y lo redirige a la vista de bienvenida para iniciar sesión.
+   * @param {Object} userData - Datos del usuario registrado.
+   */
   const handleRegisterSuccess = (userData) => {
     alert("Registro exitoso. Ahora puedes iniciar sesión con tu wallet.");
     setView('welcome');
   };
 
+  /**
+   * Manejador para el éxito de la eliminación del perfil.
+   * Limpia los estados de usuario y grupo, y recarga la página.
+   */
   const handleDeleteProfileSuccess = () => {
     setUser(null);
     setWallet("");
     setUserGroup(null);
     window.location.reload();
     setView('welcome');
-
   };
-  // Muchos de estos handlers van a cambiar teniendo en cuenta que ahora no hay que actualizar el estado porque se encargara de mostrar las cosas las vistas, pero los dejo aquí para que se vea que se ha pensado en ello y no se ha dejado de lado, aunque ahora mismo no hagan nada
+  /**
+   * Manejador para el envío exitoso de una incidencia.
+   * Refresca los datos y vuelve al dashboard.
+   * @param {Object} newInc - La nueva incidencia (actualmente no se usa directamente, solo se refresca).
+   */
   const handleIncidenceSubmit = (newInc) => {
     refreshData();
     setView('dashboard'); 
   };
 
+  /**
+   * Manejador para el éxito de la creación de un grupo.
+   * Actualiza la información del grupo del usuario y vuelve al dashboard.
+   */
   const handleCreateGroupSuccess = async () => {
     try {
       let dataGroup = await Web3Service.getActualGroup();
@@ -115,6 +170,10 @@ function App() {
     }
   };
 
+  /**
+   * Manejador para el éxito al unirse a un grupo.
+   * Actualiza la información del grupo del usuario y vuelve al dashboard.
+   */
   const handleJoinGroupSuccess = async () => {
     try {
       let dataGroup = await Web3Service.getActualGroup();
@@ -129,18 +188,29 @@ function App() {
     }
   };
 
-  // Estos handlers ahora solo actualizan el estado visual tras la acción del componente
+  /**
+   * Manejador para el éxito al enviar un reporte.
+   * Refresca los datos y vuelve al dashboard.
+   */
   const handleReportSuccess = () => {
     refreshData();
     setView('dashboard');
   };
 
+  /**
+   * Manejador para el éxito al enviar una petición de administrador.
+   * Refresca los datos y vuelve al dashboard.
+   */
   const handleAdminRequestSuccess = () => {
     refreshData();
     setView('dashboard');
   };
 
-  // Handler para cuando se expulsa un usuario del grupo
+  /**
+   * Manejador para cuando un miembro es expulsado de un grupo.
+   * Actualiza la lista de miembros del grupo y redirige la vista si el usuario expulsado era el actual.
+   * @param {string} removedUserName - Nombre del usuario expulsado.
+   */
   const handleGroupMemberRemoved = async (removedUserName) => {
     try {
       // Obtener datos actualizados del blockchain
@@ -162,7 +232,10 @@ function App() {
     }
   };
 
-  // Handler para cuando se elimina el grupo
+  /**
+   * Manejador para cuando el grupo actual es eliminado.
+   * Limpia los estados relacionados con el grupo y redirige al dashboard.
+   */
   const handleGroupDeleted = async () => {
     setUserGroup(null);
     setAllMembers([]);
@@ -171,6 +244,9 @@ function App() {
     setView('dashboard');
   };
 
+  /**
+   * Renderiza la vista de bienvenida/login.
+   */
   if (view === 'welcome') {
     return (
       <Container className="d-flex justify-content-center align-items-center vh-100">
@@ -196,6 +272,9 @@ function App() {
     );
   }
 
+  /**
+   * Renderiza la vista de registro.
+   */
   if (view === 'register') {
     return (
       <Container className="py-5">
@@ -205,7 +284,9 @@ function App() {
     );
   }
 
-  // --- VISTA PRINCIPAL ---
+  /**
+   * Renderiza la interfaz principal de la aplicación (navbar y contenido dinámico).
+   */
   return (
     <div className="bg-light min-vh-100">
       <Navbar bg="white" expand="lg" className="shadow-sm border-bottom sticky-top py-3 mb-4">

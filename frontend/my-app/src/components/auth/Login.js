@@ -2,10 +2,25 @@ import React, { useState } from "react";
 import { Card, Button, Alert } from "react-bootstrap";
 import { Web3Service } from "../../services/web3service";
 
+/**
+ * Componente de Login para la autenticación vía Web3.
+ * Gestiona la conexión inicial con MetaMask, la firma de desafíos criptográficos
+ * y la validación del estado del usuario (existencia y bloqueos) en los contratos inteligentes.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onConnect - Callback ejecutado tras una conexión exitosa. 
+ * Recibe (walletAddress, userData). userData es null si el usuario no está registrado.
+ * 
+ * @returns {JSX.Element} El componente de login renderizado.
+ */
 const Login = ({ onConnect }) => {
     const [error, setError] = useState(null);
     const [isConnecting, setIsConnecting] = useState(false);
 
+    /**
+     * Inicia el flujo de conexión: solicita cuentas a MetaMask, inicializa la sesión 
+     * criptográfica y consulta el perfil del usuario en la Blockchain.
+     */
     const handleConnect = async () => {
         setIsConnecting(true);
         setError(null);

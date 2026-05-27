@@ -2,11 +2,26 @@ import React, { useState } from 'react';
 import { Card, ListGroup, Badge, Row, Col, Modal, Button, Spinner, Alert } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
+/**
+ * Componente de visualización del perfil del usuario logueado.
+ * Muestra información básica de la cuenta y ofrece la opción de "Derecho al Olvido"
+ * mediante la eliminación permanente del perfil en los contratos inteligentes.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.user - Objeto con los datos del usuario (userName, wallet, condition).
+ * @param {Function} props.onDeleteProfileSuccess - Callback para redirigir al usuario tras borrar su cuenta.
+ * 
+ * @returns {JSX.Element} El componente de perfil renderizado.
+ */
 const UserProfile = ({ user, onDeleteProfileSuccess }) => {
   const [showModal, setShowModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
 
+  /**
+   * Ejecuta la lógica de eliminación. Llama al servicio Web3Service para borrar al usuario
+   * tanto de su grupo actual como del registro global de la plataforma.
+   */
   const handleDelete = async () => {
     setIsDeleting(true);
     setError(null);

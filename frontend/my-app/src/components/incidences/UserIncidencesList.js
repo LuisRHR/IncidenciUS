@@ -2,6 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Badge, Alert, ListGroup, Form, Button, Spinner } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
+/**
+ * Componente que muestra todas las incidencias personales dirigidas al usuario.
+ * Recupera las incidencias desde la Blockchain donde el usuario es el destinatario directo.
+ * 
+ * Incluye lógica de filtrado por rango de fechas para facilitar la auditoría.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onCancel - Callback para volver al panel principal.
+ */
 const UserIncidencesList = ({ onCancel }) => {
     const [incidences, setIncidences] = useState([]);
     const [filteredIncidences, setFilteredIncidences] = useState([]);
@@ -10,6 +19,11 @@ const UserIncidencesList = ({ onCancel }) => {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
+    /**
+     * Carga y descifra las incidencias personales.
+     * Utiliza la clave privada del usuario (en sesión) para recuperar la clave AES
+     * de cada incidencia y posteriormente descifrar el contenido desde IPFS.
+     */
     const loadIncidences = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -31,6 +45,10 @@ const UserIncidencesList = ({ onCancel }) => {
         loadIncidences();
     }, [loadIncidences]);
 
+    /**
+     * Aplica el filtrado por fechas sobre la lista de incidencias cargadas en memoria.
+     * Valida que el rango sea coherente.
+     */
     const applyFilter = () => {
         if (!fromDate || !toDate) {
             alert("Por favor selecciona ambas fechas.");
@@ -53,6 +71,9 @@ const UserIncidencesList = ({ onCancel }) => {
         setFilteredIncidences(filtered);
     };
 
+    /**
+     * Limpia los filtros y restaura la vista original de todas las incidencias.
+     */
     const resetFilter = () => {
         setFromDate('');
         setToDate('');
