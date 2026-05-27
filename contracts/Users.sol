@@ -43,6 +43,7 @@ contract Users {
     /**
      * @notice Registra un nuevo usuario en la plataforma.
      * @dev Verifica que la wallet, el nombre y el email no existan previamente.
+     * @dev El primer usuario registrado se asigna automáticamente como Administrador de Sistema.
      * @param userNameHashed Hash keccak256 del nombre de usuario.
      * @param emailHashed Hash keccak256 del correo electrónico.
      * @param userInfoCID CID de IPFS con la información cifrada/pública del perfil.
@@ -54,8 +55,12 @@ contract Users {
         require(emailToUid[emailHashed] == 0, "Usuario ya registrado con este correo");
         
         uint uid = userCount;
-        
-        users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID, publicKey);
+        if (userCount == 1) {
+            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.ADMINISTRADOR_SISTEMA, false, userInfoCID, publicKey);
+        } else {   
+            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID, publicKey);
+ 
+        }
         walletToUid[msg.sender] = uid;
         userNameToUid[userNameHashed] = uid;
         emailToUid[emailHashed] = uid;
@@ -93,6 +98,9 @@ contract Users {
     function giveUserAdminStatus(address userAddress) public {
         uint uid = walletToUid[userAddress];
         require(uid != 0, "Usuario no registrado");
+        uint callerUid = walletToUid[msg.sender];
+        // Añadido actualmente tras crear otro sistema de dar admin.
+        require(users[callerUid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ascender usuarios");
         require(users[uid].condition!=userCondition.ADMINISTRADOR_SISTEMA, "El usuario ya es admin");
         users[uid].condition = userCondition.ADMINISTRADOR_SISTEMA;
     }

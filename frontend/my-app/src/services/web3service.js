@@ -75,8 +75,7 @@ const IPFS_FILE_UPLOAD_URL = process.env.REACT_APP_IPFS_FILE_UPLOAD_URL;
 const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
 
 /**
- * Obtiene la clave privada determinista almacenada en la sesión volátil.
- * @returns {string|null} Clave privada en formato hexadecimal (seed criptográfica) o null.
+ * Obtiene la clave privada almacenada en la sesión volátil.
  */
  const getSessionKey = () => sessionStorage.getItem('cached_priv_key');
 
@@ -140,30 +139,22 @@ const getContract = async (contractType, withSigner = false) => {
 };
 
 /**
- * Sube datos JSON a IPFS a través de Pinata o simula la subida en local.
- * Tras el commit de comentarios voy a eliminar la simulación local y dejar solo la subida real a IPFS, pero por ahora lo dejo.
+ * Sube datos JSON a IPFS a través de Pinata.
  * @param {Object} data - Los datos a subir.
- * @param {string|null} [pinataJwt=null] - El token JWT de Pinata.
  * @throws {Error} Si la subida falla.
  * @returns {Promise<string>} El CID (Hash) de IPFS de los datos subidos.
  */
-const uploadToIPFS = async (data, pinataJwt = null) => {
+const uploadToIPFS = async (data) => {
     try {
-        const payload = data;
-
-        if (!pinataJwt) {
-            const mockCID = "QmSimulated" + Math.random().toString(36).substring(2, 15);
-            const mockStorage = JSON.parse(localStorage.getItem('mockIPFSStorage') || '{}');
-            mockStorage[mockCID] = payload;
-            localStorage.setItem('mockIPFSStorage', JSON.stringify(mockStorage));
-            return mockCID;
-        }
-
         const response = await fetch(IPFS_UPLOAD_URL, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${pinataJwt}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pinataContent: payload })
+            headers: { 'Authorization': `Bearer ${PINATA_JWT}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pinataContent: data })
         });
+
+        if (!response.ok) {
+            throw new Error(`IPFS upload failed: ${response.statusText}`);
+        }
 
         const result = await response.json();
         return result.IpfsHash;
@@ -181,9 +172,6 @@ const uploadToIPFS = async (data, pinataJwt = null) => {
  */
 const uploadFilesToIPFS = async (files) => {
     if (!files || files.length === 0) return [];
-    if (!process.env.REACT_APP_PINATA_JWT) {
-        return Array.from(files).map(f => "QmMockFile" + Math.random().toString(36));
-    }
 
     const uploadedCIDs = [];
     const filesArray = Array.from(files);
@@ -228,15 +216,11 @@ const uploadFilesToIPFS = async (files) => {
 const fetchFromIPFS = async (cid) => {
     try {
         if (!cid || cid === "N/A" || cid === "") return { error: "No CID" };
-        let data;
-        if (cid.startsWith("QmSimulated")) {
-            const mockStorage = JSON.parse(localStorage.getItem('mockIPFSStorage') || '{}');
-            data = mockStorage[cid];
-        } else {
-            const gatewayUrl = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
-            const response = await fetch(`${gatewayUrl}${cid}`);
-            data = await response.json();
-        }
+        
+        const gatewayUrl = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
+        const response = await fetch(`${gatewayUrl}${cid}`);
+        const data = await response.json();
+        
         return (data && data.pinataContent !== undefined) ? data.pinataContent : data;
     } catch (error) {
         return null;
@@ -348,7 +332,7 @@ export const Web3Service = {
             const cleanName = userName.trim();
             const cleanEmail = email.trim();
             
-            const cid = await uploadToIPFS(encryptData({ userName: cleanName, email: cleanEmail }), PINATA_JWT);
+            const cid = await uploadToIPFS(encryptData({ userName: cleanName, email: cleanEmail }));
             
             const tx = await contract.registerUser(
                 hashValue(cleanName), 
@@ -687,7 +671,7 @@ export const Web3Service = {
             const aesKey = ethers.hexlify(ethers.randomBytes(32));
             const payload = { userSender, title, description, proofs: fileCIDs };
             const encryptedContent = CryptoJS.AES.encrypt(JSON.stringify(payload), aesKey).toString();
-            const userReportCID = await uploadToIPFS(encryptedContent, PINATA_JWT);
+            const userReportCID = await uploadToIPFS(encryptedContent);
             const adminWallets = [];
             const encryptedKeys = [];
             for (let admin of admins) {
@@ -726,7 +710,7 @@ export const Web3Service = {
                     const bytes = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
                     const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 
-                    return { id: Number(report.id), type: 'BUG_REPORT', ...data };
+                    return { id: Number(report.id), type: 'BUG_REPORT', cid: report.userReportCID, ...data };
                 } catch (e) { return null; }
             }));
             return res.filter(r => r !== null);
@@ -756,7 +740,7 @@ export const Web3Service = {
             
             const payload = { userSender, userNameReported: userNameToReport, email, description, proofs: fileCIDs };
             const encryptedContent = CryptoJS.AES.encrypt(JSON.stringify(payload), aesKey).toString();
-            const userReportCID = await uploadToIPFS(encryptedContent, PINATA_JWT);
+            const userReportCID = await uploadToIPFS(encryptedContent);
 
             const adminWallets = admins.map(a => a.wallet);
             const encryptedKeys = await Promise.all(admins.map(async (a) => {
@@ -796,7 +780,7 @@ export const Web3Service = {
                     const bytes = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
                     const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 
-                    return { id: Number(report.id), type: 'USER_REPORT', ...data };
+                    return { id: Number(report.id), type: 'USER_REPORT', cid: report.userReportCID, ...data };
                 } catch (e) { return null; }
             }));
             return res.filter(r => r !== null);
@@ -856,7 +840,7 @@ export const Web3Service = {
             const aesKey = ethers.hexlify(ethers.randomBytes(32));
             const incidencePayload = { title, description, priority, createdAt: userDate, senderUserName, senderEmail, userReceiver, groupReceiver };
             const encryptedContent = CryptoJS.AES.encrypt(JSON.stringify(incidencePayload), aesKey).toString();
-            const cid = await uploadToIPFS(encryptedContent, PINATA_JWT);
+            const cid = await uploadToIPFS(encryptedContent);
 
             let finalEncryptedAESKey = "";
 

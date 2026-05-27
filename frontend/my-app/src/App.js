@@ -61,7 +61,7 @@ function App() {
    */
   const refreshData = useCallback(async () => {
       try {
-        const sessionKey = sessionStorage.getItem('session_key');
+        const sessionKey = sessionStorage.getItem('cached_priv_key');
         
         if (window.ethereum && window.ethereum.selectedAddress && sessionKey) {
           const userData = await Web3Service.getActualUser(); 
@@ -102,7 +102,6 @@ function App() {
   const handleLoginSuccess = async (address, userData) => {
     setWallet(address);
     if (userData && userData.exists) {
-      userData.role = 'Admin de Sistema';
       setUser(userData);
       try {
         const dataGroup = await Web3Service.getActualGroup();
@@ -218,7 +217,6 @@ function App() {
       if (updatedGroup) {
         setUserGroup(updatedGroup);
         setAllMembers(updatedGroup.members);
-        localStorage.setItem('userGroup', JSON.stringify(updatedGroup));
         await new Promise(resolve => setTimeout(resolve, 2000));
         if (removedUserName === user?.userName) {
           setView("dashboard");
@@ -239,7 +237,6 @@ function App() {
   const handleGroupDeleted = async () => {
     setUserGroup(null);
     setAllMembers([]);
-    localStorage.removeItem('userGroup');
     await new Promise(resolve => setTimeout(resolve, 2000));
     setView('dashboard');
   };
@@ -342,7 +339,13 @@ function App() {
               <NavDropdown title="Mi Cuenta" id="user-dropdown" align="end">
                 <NavDropdown.Item onClick={() => setView('profile')}>Ver Perfil</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={() => {setView('welcome'); setUser(null); setUserGroup(null); sessionStorage.removeItem('session_key');}}>Cerrar Sesión</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => {
+                  setView('welcome'); 
+                  setUser(null); 
+                  setUserGroup(null); 
+                  sessionStorage.clear();
+                  localStorage.clear();
+                }}>Cerrar Sesión</NavDropdown.Item>
               </NavDropdown>
               
               <div className="text-end ms-3 me-3">

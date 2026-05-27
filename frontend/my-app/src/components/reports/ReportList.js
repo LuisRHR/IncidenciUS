@@ -179,16 +179,19 @@ const ReportList = ({ onDecline }) => {
                                     <td>
                                         {Array.isArray(rep.proofs) ? (
                                             <div className="d-flex flex-wrap gap-1">
-                                                {rep.proofs.map((cid, i) => (
-                                                    <img 
-                                                        key={i}
-                                                        src={`${Web3Service.IPFS_GATEWAY}${cid}`} 
-                                                        alt="Prueba"
-                                                        className="rounded border"
-                                                        style={{ width: '35px', height: '35px', objectFit: 'cover', cursor: 'pointer' }}
-                                                        onClick={() => window.open(`${Web3Service.IPFS_GATEWAY}${cid}`, '_blank')}
-                                                    />
-                                                ))}
+                                                {rep.proofs.map((cid, i) => {
+                                                    const url = Web3Service.IPFS_GATEWAY.endsWith('/') ? `${Web3Service.IPFS_GATEWAY}${cid}` : `${Web3Service.IPFS_GATEWAY}/${cid}`;
+                                                    return (
+                                                        <img 
+                                                            key={i}
+                                                            src={url} 
+                                                            alt="Prueba"
+                                                            className="rounded border"
+                                                            style={{ width: '35px', height: '35px', objectFit: 'cover', cursor: 'pointer' }}
+                                                            onClick={() => window.open(url, '_blank')}
+                                                        />
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <code className="small text-muted">{rep.proofs?.substring(0, 20)}...</code>
@@ -227,4 +230,3 @@ const ReportList = ({ onDecline }) => {
 };
 
 export default ReportList;
-

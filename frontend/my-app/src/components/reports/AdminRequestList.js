@@ -71,7 +71,7 @@ const AdminRequestList = ({ onDecline }) => {
                         console.log("Éxito: Petición eliminada.");
                         
                         setSuccess(`Proceso completo: Usuario ascendido y petición eliminada.`);
-                        setRequests(prev => prev.filter(r => r.id !== req.id && req.id!==0));
+                        setRequests(prev => prev.filter(r => r.id !== req.id));
                         
                     } catch (errBorrado) {
                         console.warn("Fallo al eliminar petición:", errBorrado);
@@ -100,7 +100,7 @@ const AdminRequestList = ({ onDecline }) => {
             await Web3Service.removeAdminRequest(req.id);
             
             setSuccess(`Petición denegada correctamente.`);
-            setRequests(prev => prev.filter(r => r.id !== req.id && req.id!==0));
+            setRequests(prev => prev.filter(r => r.id !== req.id));
         } catch (err) {
             setError("Error al eliminar la petición: " + err.message);
         } finally {
