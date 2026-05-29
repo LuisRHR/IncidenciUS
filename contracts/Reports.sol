@@ -102,6 +102,8 @@ contract Reports {
      */
     function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public {
         require(adminWallets.length == encryptedKeys.length, "Arrays de admins y llaves deben coincidir");
+        require(users.getIdByWallet(msg.sender) != users.getIdByUserName(senderHashed), "No puedes reportarte a ti mismo");
+        require(users.getIdByWallet(msg.sender) != users.getIdByEmail(emailHashed), "No puedes reportarte a ti mismo");
 
         userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
 
