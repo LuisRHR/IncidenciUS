@@ -375,8 +375,8 @@ function App() {
               </div>
             )}
             
-            {view === 'join-group' && <JoinGroupForm onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
-            {view === 'create-group' && <GroupForm onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
+            {view === 'join-group' && <JoinGroupForm user={user} onJoin={handleJoinGroupSuccess} onCancel={() => setView('dashboard')}/>}
+            {view === 'create-group' && <GroupForm user={user} onCreateGroup={handleCreateGroupSuccess} onCancel={() => setView('dashboard')} />}
             {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
             {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
             {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}

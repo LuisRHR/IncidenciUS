@@ -45,6 +45,7 @@ contract Groups {
     mapping (uint => uint[]) public userIdToInvitedGroupIds;
     /// @notice Almacena las llaves de acceso cifradas para cada miembro de un grupo.
     mapping (uint => mapping (address => string)) public groupUsersKeys;
+    mapping(uint => mapping(uint => string)) public memberEncryptedNames;
 
     /**
      * @notice Registra un nuevo grupo en el sistema.
@@ -225,6 +226,13 @@ contract Groups {
         delete groupNameToId[groups[groupId].groupName];
         delete walletAdminToGroupId[msg.sender];
         delete groups[groupId];
+    }
+    
+    function storeMemberEncryptedName(string memory encryptedName) public {
+        uint groupId = walletToGroupId[msg.sender];
+        require(groupId != 0, "No eres miembro de ningun grupo");
+        uint uid = users.getIdByWallet(msg.sender);
+        memberEncryptedNames[groupId][uid] = encryptedName;
     }
 
     /**

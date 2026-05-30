@@ -13,7 +13,7 @@ import { Web3Service } from "../../services/web3service";
  * 
  * @returns {JSX.Element} El formulario de unión a grupo.
  */
-const JoinGroupForm = ({ onJoin, onCancel }) => {
+const JoinGroupForm = ({ user, onJoin, onCancel }) => {
     const [groupName, setGroupName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -28,8 +28,7 @@ const JoinGroupForm = ({ onJoin, onCancel }) => {
         setError(null);
 
         try {
-            const result = await Web3Service.joinGroup(groupName);
-
+            const result = await Web3Service.joinGroup(groupName, user?.userName || ""); 
             onJoin({
                 name: groupName,
                 txHash: result.hash

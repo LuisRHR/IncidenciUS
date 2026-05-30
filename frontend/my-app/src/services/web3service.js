@@ -37,7 +37,9 @@ const GROUPS_ABI = [
     "function getIdByGroupName(string memory groupName) public view returns (uint)",
     "function getGroupIdByAdminWallet(address adminWallet) public view returns (uint)",
     "function getGroupIdByUserWallet(address userWallet) public view returns (uint)",
-    "function groupUsersKeys(uint groupId, address userWallet) public view returns (string)"
+    "function groupUsersKeys(uint groupId, address userWallet) public view returns (string)",
+    "function storeMemberEncryptedName(string memory encryptedName) public",
+    "function memberEncryptedNames(uint groupId, uint uid) public view returns (string)"
 ];
 
 const REPORTS_ABI = [
@@ -454,7 +456,7 @@ export const Web3Service = {
      * @param {string} [description=""] - Descripción opcional.
      * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
      */
-    createGroup: async (groupName, description = "") => {
+    createGroup: async (groupName, description = "", userName = "") => {
         try {
             const contract = await getContract('GROUPS', true);     
             const groupAESKey = ethers.hexlify(ethers.randomBytes(32));     
@@ -463,7 +465,15 @@ export const Web3Service = {
             sessionStorage.setItem('current_group_aes', groupAESKey);
 
             const tx = await contract.createGroup(groupName.trim(), description, JSON.stringify(encryptedAdminKey));
-            return await tx.wait();
+            await tx.wait();
+
+            if (userName) {
+                const encryptedName = CryptoJS.AES.encrypt(userName.trim(), groupAESKey).toString();
+                const tx2 = await contract.storeMemberEncryptedName(encryptedName);
+                await tx2.wait();
+            }
+
+            return true;
         } catch (error) {
             console.error("Error al crear grupo:", error);
             throw error;
@@ -501,11 +511,38 @@ export const Web3Service = {
      * @param {string} groupName - Nombre del grupo.
      * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
      */
-    joinGroup: async (groupName) => {
+    joinGroup: async (groupName, userName = "") => {
         try {
             const contract = await getContract('GROUPS', true);
             const tx = await contract.userJoined(groupName.trim());
-            return await tx.wait();
+            await tx.wait();
+
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const wallet = (await provider.getSigner()).address;
+            const groupId = await contract.getGroupIdByUserWallet(wallet);
+            const privKey = sessionStorage.getItem('cached_priv_key');
+            const encryptedGroupKeyStr = await contract.groupUsersKeys(groupId, wallet);
+
+            if (encryptedGroupKeyStr && privKey) {
+                const groupAESKey = await EthCrypto.decryptWithPrivateKey(
+                    privKey.replace('0x', ''), 
+                    JSON.parse(encryptedGroupKeyStr)
+                );
+                sessionStorage.setItem('current_group_aes', groupAESKey);
+
+                if (userName) {
+                    try {
+                        const encryptedName = CryptoJS.AES.encrypt(userName.trim(), groupAESKey).toString();
+                        const tx2 = await contract.storeMemberEncryptedName(encryptedName);
+                        await tx2.wait();
+                        sessionStorage.setItem('name_registered_in_group', '1');
+                    } catch (nameErr) {
+                        console.warn("Nombre no almacenado al unirse, se reparará en el próximo login:", nameErr);
+                    }
+                }
+            }
+
+            return true;
         } catch (error) {
             console.error("Error al unirse al grupo:", error);
             throw error;
@@ -574,11 +611,41 @@ export const Web3Service = {
             const groupData = await contract.getGroupById(groupId);
 
             if (!sessionStorage.getItem('current_group_aes')) {
-                const privKey = getPrivateKey();
+                const privKey = sessionStorage.getItem('cached_priv_key');
                 const encryptedGroupKeyStr = await contract.groupUsersKeys(groupId, wallet);
                 if (encryptedGroupKeyStr && privKey) {
-                    const groupAESKey = await EthCrypto.decryptWithPrivateKey(privKey, JSON.parse(encryptedGroupKeyStr));
+                    const groupAESKey = await EthCrypto.decryptWithPrivateKey(
+                        privKey.replace('0x', ''),
+                        JSON.parse(encryptedGroupKeyStr)
+                    );
                     sessionStorage.setItem('current_group_aes', groupAESKey);
+                }
+            }
+
+            if (!sessionStorage.getItem('name_registered_in_group')) {
+                try {
+                    const usersContract = await getContract('USERS', false);
+                    const uid = Number(await usersContract.getIdByWallet(wallet));
+                    if (uid && uid !== 0) {
+                        const storedName = await contract.memberEncryptedNames(groupId, uid);
+                        if (!storedName || storedName === "") {
+                            const currentAES = sessionStorage.getItem('current_group_aes');
+                            const userBC = await usersContract.getUserById(uid);
+                            const raw = await fetchFromIPFS(userBC.userInfoCID);
+                            if (raw && currentAES) {
+                                const ipfsData = typeof raw === 'string' ? decryptData(raw) : raw;
+                                if (!ipfsData.error && ipfsData.userName) {
+                                    const encryptedName = CryptoJS.AES.encrypt(ipfsData.userName.trim(), currentAES).toString();
+                                    const txR = await contract.storeMemberEncryptedName(encryptedName);
+                                    await txR.wait();
+                                }
+                            }
+                        }
+                    }
+                } catch (repairErr) {
+                    console.warn("Auto-repair nombre grupo:", repairErr);
+                } finally {
+                    sessionStorage.setItem('name_registered_in_group', '1');
                 }
             }
 
@@ -600,28 +667,37 @@ export const Web3Service = {
      */
     getMembersInfo: async (memberIds) => {
         try {
-            const contract = await getContract('USERS', true);
+            const groupAESKey = sessionStorage.getItem('current_group_aes');
+            if (!groupAESKey) throw new Error("No tienes la clave del grupo en sesión.");
+
+            const usersContract = await getContract('USERS', false);
+            const groupsContract = await getContract('GROUPS', true);
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const wallet = (await provider.getSigner()).address;
+            const groupId = await groupsContract.getGroupIdByUserWallet(wallet);
+
             const members = [];
             for (const memberId of memberIds) {
                 try {
-                    const userData = await contract.getUserById(memberId);
-                    const cid = userData.userInfoCID;
-                    let userInfo = { userName: "Usuario Desconocido", email: "" };
-                    if (cid && cid !== "N/A" && cid !== "") {
-                        const raw = await fetchFromIPFS(cid);
-                        if (raw) {
-                            const data = typeof raw === 'string' ? decryptData(raw) : raw;
-                            if (!data.error) userInfo = data;
-                        }
+                    const userData = await usersContract.getUserById(memberId);
+
+                    let userName = "Usuario Desconocido";
+                    const encryptedName = await groupsContract.memberEncryptedNames(groupId, memberId);
+                    if (encryptedName && encryptedName !== "") {
+                        const bytes = CryptoJS.AES.decrypt(encryptedName, groupAESKey);
+                        const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                        if (decoded) userName = decoded;
                     }
+
                     members.push({
                         uid: memberId,
                         wallet: userData.wallet,
-                        userName: userInfo.userName.trim(),
-                        email: userInfo.email.trim(),
+                        userName,
                         isBanned: userData.isBanned
                     });
-                } catch (err) { console.warn(`Error al obtener info del miembro ${memberId}:`, err); }
+                } catch (err) {
+                    console.warn(`Error al obtener info del miembro ${memberId}:`, err);
+                }
             }
             return members;
         } catch (error) {
