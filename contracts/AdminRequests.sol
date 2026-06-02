@@ -23,8 +23,9 @@ contract AdminRequests {
 
     constructor() {}
 
-    /// @dev Mappings para almacenamiento y prevención de duplicados.
+    /// @dev Almacena todas las solicitudes de administración indexadas por su ID único.
     mapping(uint => AdminRequest) public adminRequests;
+    /// @dev Relaciona la dirección wallet de un usuario con el ID de su solicitud activa.
     mapping(address => uint) public walletToRequestId;
 
     /**
@@ -42,7 +43,7 @@ contract AdminRequests {
 
     /**
      * @notice Permite visualizar todas las solicitudes actuales.
-     * @dev Filtra las solicitudes que hayan sido eliminadas (id != 0).
+     * @dev Devuelve un array compacto eliminando los huecos de solicitudes borradas.
      * @return AdminRequest[] Array con las solicitudes pendientes.
      */
     function viewRequests() public view returns (AdminRequest[] memory) {

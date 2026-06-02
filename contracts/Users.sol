@@ -35,9 +35,13 @@ contract Users {
     /// @notice Contador para asignar IDs únicos a nuevos usuarios.
     uint public userCount=1;
 
+    /// @dev Almacena la información completa de cada usuario indexada por su UID.
     mapping(uint => User) public users;
+    /// @dev Relaciona la dirección wallet de un usuario con su identificador único (UID).
     mapping(address => uint) public walletToUid;
+    /// @dev Relaciona el hash del nombre de usuario con su identificador único (UID).
     mapping(bytes32 => uint) public userNameToUid;
+    /// @dev Relaciona el hash del correo electrónico con su identificador único (UID).
     mapping(bytes32 => uint) public emailToUid;
 
     /**
@@ -59,7 +63,6 @@ contract Users {
             users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.ADMINISTRADOR_SISTEMA, false, userInfoCID, publicKey);
         } else {   
             users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID, publicKey);
- 
         }
         walletToUid[msg.sender] = uid;
         userNameToUid[userNameHashed] = uid;
@@ -99,7 +102,6 @@ contract Users {
         uint uid = walletToUid[userAddress];
         require(uid != 0, "Usuario no registrado");
         uint callerUid = walletToUid[msg.sender];
-        // Añadido actualmente tras crear otro sistema de dar admin.
         require(users[callerUid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ascender usuarios");
         require(users[uid].condition!=userCondition.ADMINISTRADOR_SISTEMA, "El usuario ya es admin");
         users[uid].condition = userCondition.ADMINISTRADOR_SISTEMA;
@@ -128,6 +130,7 @@ contract Users {
     function blockUser(bytes32 userNameHashed) public {
         uint uid = walletToUid[msg.sender];
         require(users[uid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
+        require(userNameToUid[userNameHashed] != uid, "No puedes bloquearte a ti mismo");
         uint uidToBlock = userNameToUid[userNameHashed];
         require(uidToBlock != 0, "Usuario a bloquear no registrado");
         users[uidToBlock].isBanned = true;

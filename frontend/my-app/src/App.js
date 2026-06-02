@@ -18,6 +18,7 @@ import ReportList from './components/reports/ReportList';
 import AdminRequestForm from './components/reports/AdminRequestForm';
 import AdminRequestList from './components/reports/AdminRequestList';
 import JoinGroupForm from './components/groups/JoinGroupForm';
+import UserNotifications from './components/auth/UserNotifications';
 
 /**
  * Componente principal de la aplicación IncidenciUS.
@@ -335,6 +336,16 @@ function App() {
               </NavDropdown>
             </Nav>
 
+            <Nav>
+              <Nav.Link onClick={() => setView('notifications')}>
+                Notificaciones {user?.notifications && user.notifications.length > 0 && (
+                  <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle">
+                    {user.notifications.length}
+                  </Badge>
+                )}
+              </Nav.Link>
+            </Nav>
+
             <Nav className="align-items-center">
               <NavDropdown title="Mi Cuenta" id="user-dropdown" align="end">
                 <NavDropdown.Item onClick={() => setView('profile')}>Ver Perfil</NavDropdown.Item>
@@ -380,6 +391,7 @@ function App() {
             {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
             {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
             {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}
+            {view === 'notifications' && <UserNotifications onCancel={() => setView('dashboard')} />}
             {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
             
             {view === 'manage-members' && (

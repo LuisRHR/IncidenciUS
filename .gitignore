@@ -15,6 +15,7 @@ node_modules
 
 # Ignore ignition deployment 
 ignition/deployments/chain-31337
+ignition/deployments/chain-11155111
 
 Lock.sol
 Lock.js 

@@ -37,15 +37,27 @@ contract Groups {
         users = Users(usersAddress);
     }
 
-    /// @dev Mappings para acceso rápido a datos del grupo y relaciones.
-    mapping (uint => Group) public groups;
-    mapping (string => uint) public groupNameToId;
-    mapping (address => uint) public walletAdminToGroupId;
-    mapping (address => uint) public walletToGroupId;
-    mapping (uint => uint[]) public userIdToInvitedGroupIds;
-    /// @notice Almacena las llaves de acceso cifradas para cada miembro de un grupo.
-    mapping (uint => mapping (address => string)) public groupUsersKeys;
+    /// @dev Almacena la información detallada de cada grupo indexada por su ID único.
+    mapping(uint => Group) public groups;
+    /// @dev Relaciona el nombre único de un grupo con su ID correspondiente.
+    mapping(string => uint) public groupNameToId;
+    /// @dev Mapea la dirección de un administrador con el ID del grupo que gestiona.
+    mapping(address => uint) public walletAdminToGroupId;
+    /// @dev Mapea la dirección de un usuario con el ID del grupo al que pertenece actualmente.
+    mapping(address => uint) public walletToGroupId;
+    /// @dev Almacena la lista de IDs de grupos a los que un usuario ha sido invitado.
+    mapping(uint => uint[]) public userIdToInvitedGroupIds;
+    /// @dev Almacena las llaves de acceso cifradas asimétricamente para cada miembro de un grupo.
+    mapping(uint => mapping(address => string)) public groupUsersKeys;
+    /// @dev Almacena los nombres de usuario cifrados con la clave AES del grupo para preservar la privacidad.
     mapping(uint => mapping(uint => string)) public memberEncryptedNames;
+
+    /**
+     * @notice Evento notifica a usuario para unirse a un grupo.
+     * @param groupId ID del grupo al que se invita.
+     * @param groupName Nombre del grupo al que se invita.
+     */
+    event InvitedToGroup(uint groupId, string groupName);
 
     /**
      * @notice Registra un nuevo grupo en el sistema.
@@ -94,6 +106,7 @@ contract Groups {
         userIdToInvitedGroupIds[userId].push(groupId);
 
         groupUsersKeys[groupId][userWallet] = encryptedKeyForUser;
+        emit InvitedToGroup(groupId, groups[groupId].groupName);
     }
 
     /**
@@ -157,6 +170,40 @@ contract Groups {
             }
         }
         delete userIdToInvitedGroupIds[userId];
+    }
+
+    /**
+     * @notice Permite a un usuario rechazar una invitación a un grupo.
+     * @param groupName Nombre del grupo cuya invitación desea rechazar.
+     */
+    function rejectGroupInvitation(string memory groupName) public {
+        uint groupId = groupNameToId[groupName];
+        require(groupId != 0, "Grupo no encontrado");
+        uint userId = users.getIdByWallet(msg.sender);
+        require(isInvited(groupId, userId), "No has sido invitado a este grupo");
+
+        // Eliminar de invitedUsers del grupo
+        uint[] storage groupInvitedUsers = groups[groupId].invitedUsers;
+        for (uint i = 0; i < groupInvitedUsers.length; i++) {
+            if (groupInvitedUsers[i] == userId) {
+                groupInvitedUsers[i] = groupInvitedUsers[groupInvitedUsers.length - 1];
+                groupInvitedUsers.pop();
+                break;
+            }
+        }
+
+        // Eliminar de userIdToInvitedGroupIds del usuario
+        uint[] storage userInvitedGroups = userIdToInvitedGroupIds[userId];
+        for (uint i = 0; i < userInvitedGroups.length; i++) {
+            if (userInvitedGroups[i] == groupId) {
+                userInvitedGroups[i] = userInvitedGroups[userInvitedGroups.length - 1];
+                userInvitedGroups.pop();
+                break;
+            }
+        }
+
+        // Eliminar la clave del usuario
+        delete groupUsersKeys[groupId][msg.sender];
     }
 
     /**

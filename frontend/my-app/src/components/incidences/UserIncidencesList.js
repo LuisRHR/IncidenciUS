@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Badge, Alert, ListGroup, Form, Button, Spinner } from 'react-bootstrap';
 import { Web3Service } from '../../services/web3service';
 
+const STATUS_LABELS = { 0: 'Activa', 1: 'Resuelta', 2: 'Reabierta', 3: 'Cerrada' };
+const STATUS_COLORS = { 0: 'primary', 1: 'success', 2: 'warning', 3: 'secondary' };
+
 /**
  * Componente que muestra todas las incidencias personales dirigidas al usuario.
  * Recupera las incidencias desde la Blockchain donde el usuario es el destinatario directo.
@@ -18,6 +21,7 @@ const UserIncidencesList = ({ onCancel }) => {
     const [error, setError] = useState(null);
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [processingId, setProcessingId] = useState(null);
 
     /**
      * Carga y descifra las incidencias personales.
@@ -74,6 +78,20 @@ const UserIncidencesList = ({ onCancel }) => {
     /**
      * Limpia los filtros y restaura la vista original de todas las incidencias.
      */
+    const handleResolve = async (inc) => {
+        setProcessingId(inc.id);
+        try {
+            await Web3Service.updateIncidenceStatus(inc.id, 1); // Resuelta
+            const update = list => list.map(i => i.id === inc.id ? { ...i, status: 1 } : i);
+            setIncidences(prev => update(prev));
+            setFilteredIncidences(prev => update(prev));
+        } catch (err) {
+            setError(err.message || "Error al marcar como resuelta.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const resetFilter = () => {
         setFromDate('');
         setToDate('');
@@ -162,7 +180,12 @@ const UserIncidencesList = ({ onCancel }) => {
                     {filteredIncidences.map((inc, index) => (
                         <Col md={6} lg={4} className="mb-4" key={index}>
                             <Card className="h-100 shadow border-0 rounded-4 overflow-hidden">
-                                <div className="px-3 pt-3"><Badge bg="success">#{inc.id}</Badge></div>
+                                <div className="px-3 pt-3 d-flex justify-content-between align-items-center">
+                                    <Badge bg="success">#{inc.id}</Badge>
+                                    <Badge bg={STATUS_COLORS[inc.status] ?? 'secondary'}>
+                                        {STATUS_LABELS[inc.status] ?? 'Desconocido'}
+                                    </Badge>
+                                </div>
                                 <Card.Header className="bg-white border-0 pt-2 d-flex justify-content-between align-items-center">
                                     <Badge bg={inc.priority === 2 ? 'danger' : inc.priority === 1 ? 'warning' : 'info'}>
                                         Prioridad {inc.priority === 2 ? 'Alta' : inc.priority === 1 ? 'Media' : 'Baja'}
@@ -188,6 +211,14 @@ const UserIncidencesList = ({ onCancel }) => {
                                         </ListGroup.Item>
                                     </ListGroup>
                                 </Card.Body>
+                                {(inc.status === 0 || inc.status === 2) && (
+                                    <Card.Footer className="bg-white border-0 pb-3 pt-0">
+                                        <Button variant="outline-success" size="sm" className="w-100 fw-bold"
+                                            disabled={processingId === inc.id} onClick={() => handleResolve(inc)}>
+                                            {processingId === inc.id ? <Spinner size="sm" animation="border" /> : "Marcar como Resuelta"}
+                                        </Button>
+                                    </Card.Footer>
+                                )}
                             </Card>
                         </Col>
                     ))}

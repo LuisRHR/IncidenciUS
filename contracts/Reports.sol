@@ -61,10 +61,13 @@ contract Reports {
         users = Users(usersAddress);
     }
 
+    /// @dev Almacena todos los reportes de bugs indexados por ID.
     mapping(uint => BugReport) public bugReports;
+    /// @dev Almacena todas las denuncias de usuarios indexadas por ID.
     mapping(uint => UserReport) public userReports;
-
+    /// @dev Almacena las llaves AES cifradas de los reportes de bug para cada administrador.
     mapping(uint => mapping(address => string)) public bugReportKeys;
+    /// @dev Almacena las llaves AES cifradas de las denuncias de usuarios para cada administrador.
     mapping(uint => mapping(address => string)) public userReportKeys;
 
     /**
@@ -102,8 +105,11 @@ contract Reports {
      */
     function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public {
         require(adminWallets.length == encryptedKeys.length, "Arrays de admins y llaves deben coincidir");
-        require(users.getIdByWallet(msg.sender) != users.getIdByUserName(senderHashed), "No puedes reportarte a ti mismo");
-        require(users.getIdByWallet(msg.sender) != users.getIdByEmail(emailHashed), "No puedes reportarte a ti mismo");
+
+        uint senderId = users.getIdByWallet(msg.sender);
+        require(senderId != 0, "Debes estar registrado para reportar");
+        require(senderId != users.getIdByUserName(userNameHashed), "No puedes reportarte a ti mismo");
+        require(senderId != users.getIdByEmail(emailHashed), "No puedes reportarte a ti mismo");
 
         userReports[reportCount] = UserReport(reportCount, senderHashed, descriptionHashed, hashProofs, userNameHashed, emailHashed, userReportCID);
 
@@ -130,7 +136,7 @@ contract Reports {
         BugReport[] memory result = new BugReport[](activeCount);
         uint currentIndex = 0;
         for (uint i = reportCount; i > 0; i--) {
-            if (bugReports[i].id != 0 || userReports[i].id != 0) {
+            if (bugReports[i].id != 0) {
                 result[currentIndex] = bugReports[i];
                 currentIndex++;
             }
@@ -156,7 +162,7 @@ contract Reports {
         UserReport[] memory result = new UserReport[](activeCount);
         uint currentIndex = 0;
         for (uint i = reportCount; i > 0; i--) {
-            if (userReports[i].id != 0 || bugReports[i].id != 0) {
+            if (userReports[i].id != 0) {
                 result[currentIndex] = userReports[i];
                 currentIndex++;
             }

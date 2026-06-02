@@ -29,6 +29,7 @@ const GROUPS_ABI = [
     "function createGroup(string memory groupName, string memory description, string memory encryptedAdminKey) public",
     "function inviteUserToGroup(bytes32 userNameHashed, string memory encryptedKeyForUser) public",
     "function userJoined(string memory groupName) public",
+    "function rejectGroupInvitation(string memory groupName) public",
     "function deleteUserFromGroup(bytes32 userNameHashed) public",
     "function deleteSelfUserFromGroup_WhenDeletingUser() public",
     "function deleteGroup() public",
@@ -39,7 +40,8 @@ const GROUPS_ABI = [
     "function getGroupIdByUserWallet(address userWallet) public view returns (uint)",
     "function groupUsersKeys(uint groupId, address userWallet) public view returns (string)",
     "function storeMemberEncryptedName(string memory encryptedName) public",
-    "function memberEncryptedNames(uint groupId, uint uid) public view returns (string)"
+    "function memberEncryptedNames(uint groupId, uint uid) public view returns (string)",
+    "function getInvitedGroupIdsByUserId(uint userId) public view returns (uint[] memory)"
 ];
 
 const REPORTS_ABI = [
@@ -54,9 +56,14 @@ const REPORTS_ABI = [
 ];
 
 const INCIDENCES_ABI = [
-    "function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID, string memory encryptedAESKey) public",
-    "function userViewIndividualIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID, string encryptedAESKey)[])",
-    "function userViewGroupIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID, string encryptedAESKey)[])"
+    "function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver, bytes32 groupReceiverHash, string memory privateDataCID, string memory encryptedAESKey, string memory senderEncryptedAESKey) public",
+    "function userViewIndividualIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID, string encryptedAESKey, uint8 status, address senderWallet)[])",
+    "function userViewGroupIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID, string encryptedAESKey, uint8 status, address senderWallet)[])",
+    "function senderViewSentIncidences() public view returns (tuple(uint id, bytes32 titleHash, bytes32 descriptionHash, string date, uint8 priorityLevel, bytes32 senderNameHash, bytes32 userReceiverHash, bytes32 groupReceiverHash, string privateDataCID, string encryptedAESKey, uint8 status, address senderWallet)[])",
+    "function updateIncidenceStatus(uint incidenceId, uint8 newStatus) public",
+    "function storeGroupMemberKeys(uint incidenceId, address[] memory memberWallets, string[] memory encryptedKeys) public",
+    "function groupMemberKeys(uint incidenceId, address memberWallet) public view returns (string)",
+    "function senderEncryptedKeys(uint incidenceId, address senderWallet) public view returns (string)"
 ];
 
 const ADMIN_REQUESTS_ABI = [
@@ -550,6 +557,22 @@ export const Web3Service = {
     },
 
     /**
+     * Rechaza una invitación a un grupo.
+     * @param {string} groupName - Nombre del grupo cuya invitación rechazar.
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
+     */
+    rejectGroupInvitation: async (groupName) => {
+        try {
+            const contract = await getContract('GROUPS', true);
+            const tx = await contract.rejectGroupInvitation(groupName.trim());
+            return await tx.wait();
+        } catch (error) {
+            console.error("Error al rechazar invitación:", error);
+            throw error;
+        }
+    },
+
+    /**
      * Elimina a un usuario de un grupo.
      * @param {string} userNameToRemove - Nombre del usuario a eliminar.
      * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción.
@@ -596,6 +619,34 @@ export const Web3Service = {
     },
 
     /**
+     * Recupera las invitaciones pendientes para el usuario actual.
+     * @returns {Promise<Object[]>} Lista de grupos { id, name, description }
+     */
+    getInvitedGroups: async () => {
+        try {
+            const groupsContract = await getContract('GROUPS', false);
+            const usersContract = await getContract('USERS', false);
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const wallet = signer.address;
+            const uid = Number(await usersContract.getIdByWallet(wallet));
+            if (!uid || uid === 0) return [];
+            const invited = await groupsContract.getInvitedGroupIdsByUserId(uid);
+            const res = [];
+            for (const gid of invited) {
+                try {
+                    const g = await groupsContract.getGroupById(gid);
+                    res.push({ id: Number(gid), name: g.groupName, description: g.description });
+                } catch (e) { console.warn('Error fetching invited group', gid, e); }
+            }
+            return res;
+        } catch (error) {
+            console.error('Error al obtener invitaciones:', error);
+            return [];
+        }
+    },
+
+    /**
      * Obtiene la información completa del grupo al que pertenece el usuario actual.
      * Si la clave AES del grupo no está en sesión, intenta recuperarla y descifrarla.
      * @returns {Promise<Object|null>} Datos del grupo o null.
@@ -621,34 +672,7 @@ export const Web3Service = {
                     sessionStorage.setItem('current_group_aes', groupAESKey);
                 }
             }
-
-            if (!sessionStorage.getItem('name_registered_in_group')) {
-                try {
-                    const usersContract = await getContract('USERS', false);
-                    const uid = Number(await usersContract.getIdByWallet(wallet));
-                    if (uid && uid !== 0) {
-                        const storedName = await contract.memberEncryptedNames(groupId, uid);
-                        if (!storedName || storedName === "") {
-                            const currentAES = sessionStorage.getItem('current_group_aes');
-                            const userBC = await usersContract.getUserById(uid);
-                            const raw = await fetchFromIPFS(userBC.userInfoCID);
-                            if (raw && currentAES) {
-                                const ipfsData = typeof raw === 'string' ? decryptData(raw) : raw;
-                                if (!ipfsData.error && ipfsData.userName) {
-                                    const encryptedName = CryptoJS.AES.encrypt(ipfsData.userName.trim(), currentAES).toString();
-                                    const txR = await contract.storeMemberEncryptedName(encryptedName);
-                                    await txR.wait();
-                                }
-                            }
-                        }
-                    }
-                } catch (repairErr) {
-                    console.warn("Auto-repair nombre grupo:", repairErr);
-                } finally {
-                    sessionStorage.setItem('name_registered_in_group', '1');
-                }
-            }
-
+            
             return {
                 id: Number(groupId),
                 name: groupData.groupName,
@@ -781,7 +805,7 @@ export const Web3Service = {
                     const encryptedKeyStr = await contract.bugReportKeys(report.id, myWallet);
                     if (!encryptedKeyStr) return null;
 
-                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey, JSON.parse(encryptedKeyStr));
+                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(encryptedKeyStr));
                     const ipfsEncrypted = await fetchFromIPFS(report.userReportCID);
                     const bytes = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
                     const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
@@ -851,7 +875,7 @@ export const Web3Service = {
                     const encryptedKeyStr = await contract.userReportKeys(report.id, myWallet);
                     if (!encryptedKeyStr) return null;
 
-                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey, JSON.parse(encryptedKeyStr));
+                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(encryptedKeyStr));
                     const ipfsEncrypted = await fetchFromIPFS(report.userReportCID);
                     const bytes = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
                     const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
@@ -918,37 +942,75 @@ export const Web3Service = {
             const encryptedContent = CryptoJS.AES.encrypt(JSON.stringify(incidencePayload), aesKey).toString();
             const cid = await uploadToIPFS(encryptedContent);
 
+            // Cifrar la AES key para el EMISOR (permite descifrar en notificaciones)
+            const senderPubKey = sessionStorage.getItem('user_pub_key');
+            let senderEncryptedAESKey = "";
+            if (senderPubKey) {
+                const encObj = await EthCrypto.encryptWithPublicKey(senderPubKey, aesKey);
+                senderEncryptedAESKey = JSON.stringify(encObj);
+            }
+
             let finalEncryptedAESKey = "";
+            let memberWallets = [];
+            let memberEncryptedKeys = [];
 
             if (userReceiver) {
                 const userId = await usersContract.getIdByUserName(hashValue(userReceiver));
                 const userObj = await usersContract.getUserById(userId);
-                
-                if (!userObj.publicKey || userObj.publicKey === "") {
-                    throw new Error("El destinatario no tiene una clave pública registrada.");
-                }
-
-                // Cifrado Asimétrico para un usuario individual
+                if (!userObj.publicKey || userObj.publicKey === "") throw new Error("El destinatario no tiene una clave pública registrada.");
                 const encryptedAESKeyObj = await EthCrypto.encryptWithPublicKey(userObj.publicKey, aesKey);
                 finalEncryptedAESKey = JSON.stringify(encryptedAESKeyObj);
             } else if (groupReceiver) {
-                // Cifrado Simétrico para el grupo (envolvemos la llave de la incidencia con la llave del grupo)
                 const groupAESKey = sessionStorage.getItem('current_group_aes');
-                if (!groupAESKey) throw new Error("No tienes la llave del grupo para cifrar este mensaje.");
-                finalEncryptedAESKey = CryptoJS.AES.encrypt(aesKey, groupAESKey).toString();
+                if (groupAESKey) {
+                    // MIEMBRO del grupo: envuelve la clave con la group AES key
+                    finalEncryptedAESKey = CryptoJS.AES.encrypt(aesKey, groupAESKey).toString();
+                } else {
+                    // NO-MIEMBRO: fan-out con clave pública de cada miembro.
+                    // Usamos getGroupById en lugar de getGroupMembers para evitar restricciones de acceso.
+                    const groupsContract = await getContract('GROUPS', false);
+                    const groupId = await groupsContract.getIdByGroupName(groupReceiver);
+                    if (groupId.toString() === "0") throw new Error("Grupo no encontrado.");
+                    const groupData = await groupsContract.getGroupById(groupId);
+                    const memberIds = Array.from(groupData.members).map(m => Number(m));
+                    if (!memberIds || memberIds.length === 0) throw new Error("El grupo no tiene miembros.");
+                    for (const memberId of memberIds) {
+                        const memberData = await usersContract.getUserById(memberId);
+                        if (memberData.publicKey && memberData.publicKey !== "") {
+                            const encObj = await EthCrypto.encryptWithPublicKey(memberData.publicKey, aesKey);
+                            memberWallets.push(memberData.wallet);
+                            memberEncryptedKeys.push(JSON.stringify(encObj));
+                        }
+                    }
+                    if (memberWallets.length === 0) {
+                        throw new Error("Ningún miembro del grupo tiene clave pública registrada.");
+                    }
+                }
             }
 
-            const tx = await contract.registerIncidence(
-                hashValue(title), hashValue(description), userDate, priority, 
+            const txResponse = await contract.registerIncidence(
+                hashValue(title), hashValue(description), userDate, priority,
                 hashValue(senderUserName), userReceiver ? hashValue(userReceiver) : ethers.ZeroHash,
                 groupReceiver, groupReceiver ? hashValue(groupReceiver) : ethers.ZeroHash,
-                cid, finalEncryptedAESKey 
+                cid, finalEncryptedAESKey, senderEncryptedAESKey
             );
-            return await tx.wait();
-        } catch (error) {
-            console.error("Error al registrar incidencia:", error);
-            throw error;
-        }
+            const receipt = await txResponse.wait();
+
+            // Almacenar claves por miembro si es envío de no-miembro a grupo
+            if (memberWallets.length > 0) {
+                let newIncidenceId = null;
+                const iface = new ethers.Interface(['event IncidenceRegistered(uint indexed id, address indexed senderWallet)']);
+                for (const log of receipt.logs) {
+                    try { const p = iface.parseLog(log); newIncidenceId = Number(p.args.id); break; } catch {}
+                }
+                if (newIncidenceId) {
+                    const contract2 = await getContract('INCIDENCES', true);
+                    const tx2 = await contract2.storeGroupMemberKeys(newIncidenceId, memberWallets, memberEncryptedKeys);
+                    await tx2.wait();
+                }
+            }
+            return receipt;
+        } catch (error) { console.error("Error al registrar incidencia:", error); throw error; }
     },
 
     /**
@@ -959,59 +1021,78 @@ export const Web3Service = {
         try {
             const privKey = cachedPrivateKey || sessionStorage.getItem('cached_priv_key');
             if (!privKey) return [];
-
             const contract = await getContract('INCIDENCES', true);
             const incidencesBC = await contract.userViewIndividualIncidences();
-
             const res = await Promise.all(incidencesBC.map(async (inc) => {
                 try {
                     if (!inc.encryptedAESKey || inc.encryptedAESKey === "undefined") return null;
-
-                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey, JSON.parse(inc.encryptedAESKey));
+                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(inc.encryptedAESKey));
                     const ipfsEncrypted = await fetchFromIPFS(inc.privateDataCID);
-
                     const bytesData = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
-                    const decryptedStr = bytesData.toString(CryptoJS.enc.Utf8);
-                    return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, ...JSON.parse(decryptedStr) };
-                } catch (e) {
-                    console.error("Fallo al descifrar incidencia:", e);
-                    return null;
-                }
+                    return { id: Number(inc.id), priority: Number(inc.priorityLevel), date: inc.date, status: Number(inc.status), ...JSON.parse(bytesData.toString(CryptoJS.enc.Utf8)) };
+                } catch (e) { console.error("Fallo al descifrar incidencia:", e); return null; }
             }));
             return res.filter(i => i !== null);
-        } catch (error) {
-            console.error("Error al obtener incidencias del usuario:", error);
-            return [];
-        }
+        } catch (error) { console.error("Error al obtener incidencias del usuario:", error); return []; }
     },
 
     /**
      * Obtiene y descifra las incidencias pertenecientes al grupo del usuario actual.
+     * Intenta primero descifrando con la clave AES del grupo, y si falla, intenta con clave privada.
      * @returns {Promise<Object[]>} Lista de incidencias de grupo descifradas.
      */
     getGroupIncidences: async () => {
         try {
-            const groupAESKey = sessionStorage.getItem('current_group_aes');
-            if (!groupAESKey) return [];
-
+            let groupAESKey = sessionStorage.getItem('current_group_aes');
+            const privKey = cachedPrivateKey || sessionStorage.getItem('cached_priv_key');
+            
+            // Si no tenemos clave AES de grupo, intentar recuperarla del contrato
+            if (!groupAESKey && privKey) {
+                try {
+                    const contract = await getContract('GROUPS', true);
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const wallet = (await provider.getSigner()).address;
+                    const groupId = await contract.getGroupIdByUserWallet(wallet);
+                    if (groupId.toString() !== "0") {
+                        const encryptedGroupKeyStr = await contract.groupUsersKeys(groupId, wallet);
+                        if (encryptedGroupKeyStr) {
+                            groupAESKey = await EthCrypto.decryptWithPrivateKey(
+                                privKey.replace('0x', ''),
+                                JSON.parse(encryptedGroupKeyStr)
+                            );
+                            sessionStorage.setItem('current_group_aes', groupAESKey);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("No se pudo recuperar la clave AES del grupo:", e);
+                }
+            }
+            
+            if (!groupAESKey && !privKey) return [];
             const contract = await getContract('INCIDENCES', true);
             const incidencesBC = await contract.userViewGroupIncidences();
-
             const res = await Promise.all(incidencesBC.map(async (inc) => {
                 try {
-                    const bytesKey = CryptoJS.AES.decrypt(inc.encryptedAESKey, groupAESKey);
-                    const aesKey = bytesKey.toString(CryptoJS.enc.Utf8);
-                    
+                    const encKey = inc.encryptedAESKey;
+                    if (!encKey || encKey === "") return null;
+                    let aesKey;
+                    // JSON con ephemPublicKey → asimétrico (no-miembro envió). Otro formato → simétrico (miembro envió).
+                    let isAsymmetric = false;
+                    try { const p = JSON.parse(encKey); if (p.ephemPublicKey) isAsymmetric = true; } catch {}
+                    if (isAsymmetric) {
+                        if (!privKey) return null;
+                        aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(encKey));
+                    } else {
+                        if (!groupAESKey) return null;
+                        aesKey = CryptoJS.AES.decrypt(encKey, groupAESKey).toString(CryptoJS.enc.Utf8);
+                    }
                     const ipfsEncrypted = await fetchFromIPFS(inc.privateDataCID);
                     const bytesData = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
-                    return { id: Number(inc.id), priority: inc.priorityLevel, date: inc.date, ...JSON.parse(bytesData.toString(CryptoJS.enc.Utf8)) };
-                } catch (e) { return null; }
+                    return { id: Number(inc.id), priority: Number(inc.priorityLevel), date: inc.date, status: Number(inc.status), ...JSON.parse(bytesData.toString(CryptoJS.enc.Utf8)) };
+                } catch (e) { console.error("Fallo al descifrar incidencia de grupo:", e); return null; }
             }));
             return res.filter(i => i !== null);
-        } catch (error) {
-            console.error("Error al obtener incidencias del grupo:", error);
-            return [];
-        }
+        } catch (error) { console.error("Error al obtener incidencias del grupo:", error); return []; }
     },
 
     /**
@@ -1060,6 +1141,45 @@ export const Web3Service = {
             console.error("Error al eliminar petición de admin:", error);
             throw error;
         }
+    },
+
+    /**
+     * Obtiene y descifra las incidencias enviadas por el usuario actual.
+     * Permite al emisor recuperar la clave AES para visualizar sus propios reportes en el panel de notificaciones.
+     * @returns {Promise<Object[]>} Lista de incidencias enviadas descifradas.
+     */
+    getSentIncidences: async () => {
+        try {
+            const privKey = cachedPrivateKey || sessionStorage.getItem('cached_priv_key');
+            if (!privKey) return [];
+            const contract = await getContract('INCIDENCES', true);
+            const incidencesBC = await contract.senderViewSentIncidences();
+            const res = await Promise.all(incidencesBC.map(async (inc) => {
+                try {
+                    const encKey = inc.encryptedAESKey;
+                    if (!encKey || encKey === "" || encKey === "undefined") return null;
+                    const aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(encKey));
+                    const ipfsEncrypted = await fetchFromIPFS(inc.privateDataCID);
+                    const bytesData = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
+                    return { id: Number(inc.id), priority: Number(inc.priorityLevel), date: inc.date, status: Number(inc.status), ...JSON.parse(bytesData.toString(CryptoJS.enc.Utf8)) };
+                } catch (e) { console.error("Error al descifrar incidencia enviada:", e); return null; }
+            }));
+            return res.filter(i => i !== null);
+        } catch (error) { console.error("Error al obtener incidencias enviadas:", error); return []; }
+    },
+
+    /**
+     * Actualiza el estado de una incidencia específica en la Blockchain.
+     * @param {number} incidenceId - Identificador único de la incidencia.
+     * @param {number} newStatus - Nuevo estado (0: Activa, 1: Resuelta, 2: Reabierta, 3: Cerrada).
+     * @returns {Promise<ethers.ContractTransactionReceipt>} Recibo de la transacción confirmada.
+     */
+    updateIncidenceStatus: async (incidenceId, newStatus) => {
+        try {
+            const contract = await getContract('INCIDENCES', true);
+            const tx = await contract.updateIncidenceStatus(incidenceId, newStatus);
+            return await tx.wait();
+        } catch (error) { console.error("Error al actualizar estado:", error); throw error; }
     },
 
     hashValue, uploadToIPFS, fetchFromIPFS, IPFS_GATEWAY
