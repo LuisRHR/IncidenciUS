@@ -53,8 +53,6 @@ function App() {
    * @type {Array<Object>}
    */
   const [allMembers, setAllMembers] = useState([]);
-  // const [allUsers, setAllUsers] = useState([]); // Comentado porque no se usa
-
   /**
    * Función asíncrona para refrescar los datos del usuario y del grupo
    * desde la Blockchain. Se ejecuta al inicio y periódicamente.
