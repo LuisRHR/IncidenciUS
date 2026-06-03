@@ -41,8 +41,9 @@ const GroupIncidencesList = ({ userGroup, onCancel }) => {
             }
 
             const groupInc = await Web3Service.getGroupIncidences();
-            setIncidences(groupInc || []);
-            setFilteredIncidences(groupInc || []);
+            const sorted = (groupInc || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            setIncidences(sorted);
+            setFilteredIncidences(sorted);
         } catch (err) {
             console.error("Error loading group incidences:", err);
             setError("Error al cargar las incidencias del grupo. Intenta de nuevo.");

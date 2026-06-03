@@ -228,7 +228,12 @@ contract Groups {
             }
         }
         if (groups[groupId].admin == userId) {
-            groups[groupId].admin = members.length > 0 ? members[0] : 0;
+            uint newAdminId = members.length > 0 ? members[0] : 0;
+            groups[groupId].admin = newAdminId;
+            delete walletAdminToGroupId[users.getUserById(userId).wallet];
+            if (newAdminId != 0) {
+                walletAdminToGroupId[users.getUserById(newAdminId).wallet] = groupId;
+            }
         }
         
     }
@@ -252,7 +257,12 @@ contract Groups {
             }
         }
         if (groups[groupId].admin == userId) {
-            groups[groupId].admin = members.length > 0 ? members[0] : 0;
+            uint newAdminId = members.length > 0 ? members[0] : 0;
+            groups[groupId].admin = newAdminId;
+            delete walletAdminToGroupId[msg.sender];
+            if (newAdminId != 0) {
+                walletAdminToGroupId[users.getUserById(newAdminId).wallet] = groupId;
+            }
         }
         
     }

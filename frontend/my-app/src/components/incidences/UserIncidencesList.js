@@ -33,8 +33,9 @@ const UserIncidencesList = ({ onCancel }) => {
         setError(null);
         try {
             const userInc = await Web3Service.getUserIncidences();
-            setIncidences(userInc || []);
-            setFilteredIncidences(userInc || []);
+            const sorted = (userInc || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            setIncidences(sorted);
+            setFilteredIncidences(sorted);
         } catch (err) {
             console.error("Error loading incidences:", err);
             setError("Error al cargar las incidencias. Intenta de nuevo.");
