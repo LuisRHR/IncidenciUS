@@ -20,3 +20,5 @@ ignition/deployments/chain-11155111
 Lock.sol
 Lock.js 
 
+.vscode\settings.json
+.vscode\extensions.json

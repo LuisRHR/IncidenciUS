@@ -24,3 +24,7 @@ yarn-error.log*
 
 # enviorment variables
 .env
+
+# vscode files
+.vscode\settings.json
+.vscode\extensions.json

@@ -89,7 +89,8 @@ contract Incidences {
      * @param encryptedAESKey Clave AES cifrada para receptores miembro del grupo.
      * @param senderEncryptedAESKey Clave AES cifrada para el remitente (si es necesaria).
      */
-    function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, priority priorityLevel,bytes32 senderNameHash, bytes32 userReceiverHash, string memory groupReceiver,bytes32 groupReceiverHash, string memory privateDataCID, string memory encryptedAESKey,string memory senderEncryptedAESKey) public {
+    function registerIncidence(bytes32 titleHash, bytes32 descriptionHash, string memory date, priority priorityLevel,bytes32 senderNameHash, bytes32 userReceiverHash,
+     string memory groupReceiver,bytes32 groupReceiverHash, string memory privateDataCID, string memory encryptedAESKey,string memory senderEncryptedAESKey) public {
         incidences[incidenceCount] = Incidence(
             incidenceCount, titleHash, descriptionHash, date, priorityLevel,
             senderNameHash, userReceiverHash, groupReceiverHash,
