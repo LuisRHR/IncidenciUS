@@ -153,7 +153,7 @@ const ReportList = ({ onDecline }) => {
                         <tr>
                             <th>Tipo</th>
                             <th>Emisor</th>
-                            <th>Sujeto / Título</th>
+                            <th>Sujeto</th>
                             <th>Descripción</th>
                             <th>Pruebas</th>
                             <th className="text-end">Acciones</th>

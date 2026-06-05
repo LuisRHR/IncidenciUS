@@ -14,10 +14,11 @@ const PRIORITY_LABELS = { 2: 'Alta', 1: 'Media', 0: 'Baja' };
  * Sincroniza todos los cambios con el contrato inteligente a través de Web3Service.
  * 
  * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.user - Datos del usuario actual.
  * @param {Function} props.onCancel - Callback para volver al dashboard.
  * @param {Function} props.onGroupJoined - Callback para recargar datos del grupo tras aceptar una invitación.
  */
-const UserNotifications = ({ onCancel, onGroupJoined }) => {
+const UserNotifications = ({ user, onCancel, onGroupJoined }) => {
     const [notifications, setNotifications] = useState([]);
     const [invitations, setInvitations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +105,7 @@ const UserNotifications = ({ onCancel, onGroupJoined }) => {
         setProcessingId(`join-${groupId}`);
         setError(null);
         try {
-            await Web3Service.joinGroup(groupName);
+            await Web3Service.joinGroup(groupName, user.userName);
             // Remover de la lista de invitaciones
             setInvitations(prev => prev.filter(g => g.id !== groupId));
             window.alert("¡Te has unido al grupo exitosamente!");

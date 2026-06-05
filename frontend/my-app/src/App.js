@@ -10,7 +10,7 @@ import Register from './components/auth/Register';
 import IncidenceForm from './components/incidences/IncidenceForm';
 import UserIncidencesList from './components/incidences/UserIncidencesList';
 import GroupIncidencesList from './components/incidences/GroupIncidencesList';
-import GroupForm from './components/groups/GroupFrom';
+import GroupForm from './components/groups/GroupForm';
 import GroupManagement from './components/groups/GroupManagement';
 import UserProfile from './components/auth/UserProfile';
 import ReportForm from './components/reports/ReportForm';
@@ -389,7 +389,7 @@ function App() {
             {view === 'create' && <IncidenceForm user={user} onSubmit={handleIncidenceSubmit} />}
             {view === 'list-user-incidences' && <UserIncidencesList user={user} onCancel={() => setView('dashboard')}/>}
             {view === 'list-group-incidences' && <GroupIncidencesList user={user} userGroup={userGroup} onCancel = {() => setView('dashboard')}/>}
-            {view === 'notifications' && <UserNotifications onCancel={() => setView('dashboard')} />}
+            {view === 'notifications' && <UserNotifications user={user} onCancel={() => setView('dashboard')} />}
             {view === 'profile' && <UserProfile user={user} userGroup={userGroup} onDeleteProfileSuccess={handleDeleteProfileSuccess}/>}
             
             {view === 'manage-members' && (
