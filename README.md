@@ -72,7 +72,7 @@ Después, en una terminal distinta, se despliegan los contratos sobre ese nodo l
 
 Cuando termina, en la salida aparecen las direcciones de cada contrato (Users, Groups, Incidences, Reports y AdminRequests). Es importante anotarlas, porque luego hay que ponerlas en el frontend. También quedan guardadas dentro de la carpeta ignition/deployments. Por último, hay que configurar MetaMask para que use esta red local: se añade manualmente una red nueva con la URL http://127.0.0.1:8545, el Chain ID 31337 y el símbolo ETH, y se importa en MetaMask la primera de las cuentas que imprimió el comando del nodo (la cuenta número 0), usando su clave privada. Conviene tener en cuenta que esa misma cuenta es la que despliega los contratos y, al ser el primer usuario que se registre en el sistema, obtiene automáticamente el rol de administrador del sistema. Se pueden importar más cuentas para hacer las pruebas requeridas, eligiendo cualquier otra de las 20 cuentas que se imprimen al ejecutar npx hardhat node.
 
-Para la opción de Sepolia, en lugar de un nodo local, hay que crear un fichero llamado .env en la raíz del proyecto, junto a hardhat.config.js, con dos datos: la URL de Alchemy y la clave privada de la cuenta que va a pagar el despliegue.
+Para la opción de Sepolia, en lugar de un nodo local, hay que crear un fichero llamado .env en la raíz del proyecto, junto a hardhat.config.js, con dos datos: la URL de Alchemy y la clave privada de la cuenta que va a pagar el despliegue (obtenible en los detalles de la cuenta en Metamask).
 
     ALCHEMY_SEPOLIA_URL=https://eth-sepolia.g.alchemy.com/v2/TU_API_KEY
     PRIVATE_KEY=la_clave_privada_de_tu_cuenta_de_metamask_sin_0x_prefijo
@@ -222,7 +222,7 @@ After that, in a different terminal, deploy the contracts onto that local node:
 
 When it finishes, the output shows the address of each contract (Users, Groups, Incidences, Reports and AdminRequests). It is important to write them down, because they need to be set in the frontend later. They are also saved inside the ignition/deployments folder. Finally, you have to configure MetaMask to use this local network: add a new network manually with the URL http://127.0.0.1:8545, Chain ID 31337 and symbol ETH, and import into MetaMask the first of the accounts printed by the node command (account number 0), using its private key. Keep in mind that this same account is the one that deploys the contracts and, as the first user to register in the system, automatically becomes the system administrator. You can import more accounts to run the tests you need, choosing any of the other 20 accounts printed when running npx hardhat node.
 
-For the Sepolia option, instead of a local node, you have to create a file called .env in the project root, next to hardhat.config.js, with two values: the Alchemy URL and the private key of the account that will pay for the deployment.
+For the Sepolia option, instead of a local node, you have to create a file called .env in the project root, next to hardhat.config.js, with two values: the Alchemy URL and the private key of the account that will pay for the deployment (get it from the details of the account in Metamask).
 
     ALCHEMY_SEPOLIA_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
     PRIVATE_KEY=your_metamask_account_private_key
