@@ -1,5 +1,7 @@
 # IncidenciUS
 
+**Nota:** Este proyecto ha sido desarrollado como parte de un **Trabajo Fin de Grado (TFG)** en la Universidad de Sevilla.
+
 Este repositorio contiene IncidenciUS, una aplicación web descentralizada para la gestión de incidencias. La aplicación no depende de un servidor central, sino que se apoya en contratos inteligentes desplegados en una red Ethereum y en IPFS para almacenar la información sensible de forma cifrada. En la blockchain solo se guardan los hashes, los CID que apuntan a IPFS y las claves cifradas, mientras que los datos en claro nunca llegan a exponerse.
 
 El objetivo de este documento es explicar cómo desplegar el sistema desde cero y cómo utilizarlo una vez está en funcionamiento, ya que el despliegue puede resultar algo lioso la primera vez. El documento está escrito primero en español y, más abajo, se repite en inglés.
