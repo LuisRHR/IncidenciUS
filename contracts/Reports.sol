@@ -127,7 +127,7 @@ contract Reports {
     function viewSortedBugReports() public view returns (BugReport[] memory) {
         uint activeCount = 0;
         uint userId = users.getIdByWallet(msg.sender);
-        require(users.getUserById(userId).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
+        require(users.getUserById(userId).userRole == Users.UserRole.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
 
         for (uint i = 1; i < reportCount; i++) {
             if (bugReports[i].id != 0) activeCount++;
@@ -153,7 +153,7 @@ contract Reports {
     function viewSortedUserReports() public view returns (UserReport[] memory) {
         uint activeCount = 0;
         uint userId = users.getIdByWallet(msg.sender);
-        require(users.getUserById(userId).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
+        require(users.getUserById(userId).userRole == Users.UserRole.ADMINISTRADOR_SISTEMA, "Acceso denegado: Se requiere rol de Administrador");
 
         for (uint i = 1; i < reportCount; i++) {
             if (userReports[i].id != 0) activeCount++;
@@ -176,7 +176,7 @@ contract Reports {
      * @param reportId ID del reporte a eliminar.
      */
     function removeBugReport(uint reportId) public {
-        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
+        require(users.getUserById(users.getIdByWallet(msg.sender)).userRole == Users.UserRole.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
         delete bugReports[reportId];
     }
 
@@ -185,7 +185,7 @@ contract Reports {
      * @param reportId ID de la denuncia a eliminar.
      */
     function removeUserReport(uint reportId) public {
-        require(users.getUserById(users.getIdByWallet(msg.sender)).condition == Users.userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
+        require(users.getUserById(users.getIdByWallet(msg.sender)).userRole == Users.UserRole.ADMINISTRADOR_SISTEMA, "No tienes permisos para realizar esta accion");
         delete userReports[reportId];
     }
 }

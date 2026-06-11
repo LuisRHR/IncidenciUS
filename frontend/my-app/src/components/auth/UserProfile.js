@@ -8,7 +8,7 @@ import { Web3Service } from '../../services/web3service';
  * mediante la eliminación permanente del perfil en los contratos inteligentes.
  * 
  * @param {Object} props - Propiedades del componente.
- * @param {Object} props.user - Objeto con los datos del usuario (userName, wallet, condition).
+ * @param {Object} props.user - Objeto con los datos del usuario (userName, wallet, role).
  * @param {Function} props.onDeleteProfileSuccess - Callback para redirigir al usuario tras borrar su cuenta.
  * 
  * @returns {JSX.Element} El componente de perfil renderizado.
@@ -49,7 +49,7 @@ const UserProfile = ({ user, onDeleteProfileSuccess }) => {
         <div className="bg-primary py-5 text-center text-white">
           <h3 className="mb-0">{user.userName}</h3>
           <Badge bg="light" text="dark" className="mt-2">
-            {user.condition === 1 ? "ADMINISTRADOR DE SISTEMA" : "USUARIO COMÚN"}
+            {user.userRole === 1 ? "ADMINISTRADOR DEL SISTEMA" : "USUARIO COMÚN"}
           </Badge>
         </div>
         <Card.Body className="p-4">

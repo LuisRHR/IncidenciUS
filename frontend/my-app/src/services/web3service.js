@@ -13,16 +13,16 @@ if (typeof window !== 'undefined') {
  */
 const USERS_ABI = [
     "function registerUser( bytes32 userNameHashed,  bytes32 emailHashed, string memory userInfoCID, string memory publicKey) public",
-    "function login() public view returns (tuple(uint uid, bytes32 userNameHash,  bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID))",
+    "function login() public view returns (tuple(uint uid, bytes32 userNameHash,  bytes32 emailHash, address wallet, uint8 userRole, bool isBanned, string userInfoCID, string publicKey))",
     "function deleteUser() public",
     "function giveUserAdminStatus(address userAddress) public",    
     "function blockUser(bytes32 userNameHashed) public",
-    "function getActualUser() public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID, string publicKey))",
+    "function getActualUser() public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 userRole, bool isBanned, string userInfoCID, string publicKey))",
     "function getIdByWallet(address wallet) public view returns (uint)",
     "function getIdByUserName(bytes32 userNameHashed) public view returns (uint)",
     "function getIdByEmail(bytes32 emailHashed) public view returns (uint)",
     "function userCount() public view returns (uint)",
-    "function getUserById(uint uid) public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 condition, bool isBanned, string userInfoCID, string publicKey))"
+    "function getUserById(uint uid) public view returns (tuple(uint uid, bytes32 userNameHash, bytes32 emailHash, address wallet, uint8 userRole, bool isBanned, string userInfoCID, string publicKey))"
 ];
 
 const GROUPS_ABI = [
@@ -45,9 +45,9 @@ const GROUPS_ABI = [
 ];
 
 const REPORTS_ABI = [
-    "function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public",
+    "function createBugReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 titleHashed, bytes32 hashProofs, string memory bugReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public",
     "function createUserReport(bytes32 senderHashed, bytes32 descriptionHashed, bytes32 userNameHashed, bytes32 emailHashed, bytes32 hashProofs, string memory userReportCID, address[] memory adminWallets, string[] memory encryptedKeys) public",
-    "function viewSortedBugReports() public view returns (tuple(uint id, bytes32 senderHash, bytes32 descriptionHash, bytes32 hashProofs, bytes32 titleHash, string userReportCID)[])",
+    "function viewSortedBugReports() public view returns (tuple(uint id, bytes32 senderHash, bytes32 descriptionHash, bytes32 hashProofs, bytes32 titleHash, string bugReportCID)[])",
     "function viewSortedUserReports() public view returns (tuple(uint id, bytes32 senderHash, bytes32 descriptionHash, bytes32 hashProofs, bytes32 userNameHash, bytes32 emailHash, string userReportCID)[])",
     "function bugReportKeys(uint reportId, address adminWallet) public view returns (string)",
     "function userReportKeys(uint reportId, address adminWallet) public view returns (string)",
@@ -315,8 +315,8 @@ export const Web3Service = {
                 uid: Number(userBC.uid),
                 wallet: userBC.wallet,
                 isBanned: userBC.isBanned,
-                role: userBC.condition === 1n ? 'Admin de Sistema' : 'Comun',
-                condition: Number(userBC.condition),
+                role: userBC.userRole === 1n ? 'Admin de Sistema' : 'Comun',
+                userRole: Number(userBC.userRole),
                 cid: cid,
                 userName: ipfsData.userName.trim(),
                 email: ipfsData.email.trim()
@@ -428,8 +428,8 @@ export const Web3Service = {
                 uid: Number(userBC.uid),
                 wallet: userBC.wallet,
                 isBanned: userBC.isBanned,
-                role: userBC.condition === 1n ? 'Admin de Sistema' : 'Comun',
-                condition: Number(userBC.condition),
+                role: userBC.userRole === 1n ? 'Admin de Sistema' : 'Comun',
+                userRole: Number(userBC.userRole),
                 cid: cid,
                 userName: ipfsData.userName.trim(), 
                 email: ipfsData.email.trim()
@@ -741,7 +741,7 @@ export const Web3Service = {
             const admins = [];
             for (let i = 1; i <= count; i++) {
                 const u = await contract.getUserById(i); 
-                if (Number(u.condition) === 1) { 
+                if (Number(u.userRole) === 1) { 
                     admins.push({ wallet: u.wallet, publicKey: u.publicKey });
                 }
             }
@@ -806,11 +806,11 @@ export const Web3Service = {
                     if (!encryptedKeyStr) return null;
 
                     const aesKey = await EthCrypto.decryptWithPrivateKey(privKey.replace('0x', ''), JSON.parse(encryptedKeyStr));
-                    const ipfsEncrypted = await fetchFromIPFS(report.userReportCID);
+                    const ipfsEncrypted = await fetchFromIPFS(report.bugReportCID);
                     const bytes = CryptoJS.AES.decrypt(ipfsEncrypted, aesKey);
                     const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 
-                    return { id: Number(report.id), type: 'BUG_REPORT', cid: report.userReportCID, ...data };
+                    return { id: Number(report.id), type: 'BUG_REPORT', cid: report.bugReportCID, ...data };
                 } catch (e) { return null; }
             }));
             return res.filter(r => r !== null);

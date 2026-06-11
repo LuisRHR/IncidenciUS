@@ -8,7 +8,7 @@ pragma solidity ^0.8.28;
  */
 contract Users {
     /// @notice Enumerado que define el rol del usuario en el sistema.
-    enum userCondition {COMUN, ADMINISTRADOR_SISTEMA}
+    enum UserRole {COMUN, ADMINISTRADOR_SISTEMA}
 
     /**
      * @notice Estructura que representa a un usuario.
@@ -16,7 +16,7 @@ contract Users {
      * @param userNameHash Hash del nombre de usuario.
      * @param emailHash Hash del correo electrónico.
      * @param wallet Dirección de la billetera Ethereum asociada.
-     * @param condition Rol actual del usuario (Común o Administrador).
+     * @param userRole Rol actual del usuario (Común o Administrador).
      * @param isBanned Estado de bloqueo del usuario.
      * @param userInfoCID Puntero IPFS a los datos del perfil.
      * @param publicKey Clave pública utilizada para el cifrado de datos extremo a extremo.
@@ -26,7 +26,7 @@ contract Users {
         bytes32 userNameHash;
         bytes32 emailHash;
         address wallet;
-        userCondition condition;
+        UserRole userRole;
         bool isBanned;
         string userInfoCID;
         string publicKey;
@@ -60,9 +60,9 @@ contract Users {
         
         uint uid = userCount;
         if (userCount == 1) {
-            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.ADMINISTRADOR_SISTEMA, false, userInfoCID, publicKey);
+            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, UserRole.ADMINISTRADOR_SISTEMA, false, userInfoCID, publicKey);
         } else {   
-            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, userCondition.COMUN, false, userInfoCID, publicKey);
+            users[uid] = User(uid, userNameHashed, emailHashed, msg.sender, UserRole.COMUN, false, userInfoCID, publicKey);
         }
         walletToUid[msg.sender] = uid;
         userNameToUid[userNameHashed] = uid;
@@ -102,9 +102,9 @@ contract Users {
         uint uid = walletToUid[userAddress];
         require(uid != 0, "Usuario no registrado");
         uint callerUid = walletToUid[msg.sender];
-        require(users[callerUid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para ascender usuarios");
-        require(users[uid].condition!=userCondition.ADMINISTRADOR_SISTEMA, "El usuario ya es admin");
-        users[uid].condition = userCondition.ADMINISTRADOR_SISTEMA;
+        require(users[callerUid].userRole == UserRole.ADMINISTRADOR_SISTEMA, "No tienes permisos para ascender usuarios");
+        require(users[uid].userRole!=UserRole.ADMINISTRADOR_SISTEMA, "El usuario ya es admin");
+        users[uid].userRole = UserRole.ADMINISTRADOR_SISTEMA;
     }
 
     /**
@@ -129,7 +129,7 @@ contract Users {
      */
     function blockUser(bytes32 userNameHashed) public {
         uint uid = walletToUid[msg.sender];
-        require(users[uid].condition == userCondition.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
+        require(users[uid].userRole == UserRole.ADMINISTRADOR_SISTEMA, "No tienes permisos para bloquear usuarios");
         require(userNameToUid[userNameHashed] != uid, "No puedes bloquearte a ti mismo");
         uint uidToBlock = userNameToUid[userNameHashed];
         require(uidToBlock != 0, "Usuario a bloquear no registrado");

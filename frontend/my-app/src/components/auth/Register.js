@@ -67,7 +67,7 @@ const Register = ({ wallet, onSuccess }) => {
                 userName: formData.userName.trim(),
                 email: formData.email.trim(),
                 role: "Comun",
-                condition: 0,
+                userRole: 0,
                 cid: result.cid,
                 exists: true
             };
