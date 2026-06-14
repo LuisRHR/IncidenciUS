@@ -98,7 +98,6 @@ contract Groups {
         require(userId != 0, "Usuario a invitar no registrado"); // Verificamos que el usuario a invitar está registrado
         require(!isMember(groupId, userId), "Usuario ya es miembro del grupo"); // Verificamos que el usuario no es ya miembro del grupo
         require(!isInvited(groupId, userId), "Usuario ya ha sido invitado al grupo"); // Verificamos que el usuario no ha sido ya invitado al grupo
-        require(userId != 0, "Usuario no registrado");
         
         address userWallet = users.getUserById(userId).wallet;
         

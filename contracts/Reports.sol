@@ -28,8 +28,8 @@ contract Reports {
     }
 
     /**
-     * @notice Estructura para denuncias entre usuarios.
-     * @param id Identificador único de la denuncia.
+     * @notice Estructura para reportes entre usuarios.
+     * @param id Identificador único del reporte.
      * @param senderHash Hash del nombre del remitente.
      * @param descriptionHash Hash del motivo de la denuncia.
      * @param hashProofs Hash de las pruebas.

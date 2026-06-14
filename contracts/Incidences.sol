@@ -26,7 +26,7 @@ contract Incidences {
      * @param userReceiverHash Hash del nombre del usuario receptor (si es individual).
      * @param groupReceiverHash Hash del nombre del grupo receptor (si es grupal).
      * @param privateDataCID CID de IPFS con los datos privados cifrados.
-     * @param encryptedAESKey Clave AES cifrada para descifrar los datos (para receptores miembro).
+     * @param encryptedAESKey Clave AES cifrada para descifrar los datos (para receptores miembro o usuario individual).
      * @param status Estado actual de la incidencia.
      * @param senderWallet Dirección wallet del usuario que envía la incidencia.
      */
