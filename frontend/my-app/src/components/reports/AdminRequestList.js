@@ -1,0 +1,170 @@
+import React, { useCallback, useState } from 'react';
+import { Table, Button, Card, Container, Spinner, Alert, Badge } from 'react-bootstrap';
+import { Web3Service } from "../../services/web3service";
+
+/**
+ * Vista de administración para la gestión de solicitudes de rango.
+ * Permite a los administradores actuales "Ascender" a nuevos usuarios
+ * basándose en su justificación.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onDecline - Callback para cerrar la vista.
+ * 
+ * @returns {JSX.Element} La lista de peticiones pendientes.
+ */
+const AdminRequestList = ({ onDecline }) => {
+    const [processingId, setProcessingId] = useState(null);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+    const [requests, setRequests] = useState([]);
+    
+    /**
+     * Recupera todas las peticiones desde el Smart Contract.
+     * Filtra registros nulos o direcciones de origen inválidas.
+     */
+    const loadRequests = useCallback(async () => {
+        setError(null);
+        try {
+            const reqs = await Web3Service.viewAdminRequests();
+            const cleanReqs = (reqs || []).filter(req => 
+                req && 
+                req.id !== undefined && 
+                req.id.toString() !== "0" && 
+                req.userWallet !== "0x0000000000000000000000000000000000000000"
+            );
+            setRequests(cleanReqs);
+        } catch (err) {
+            console.error("Error loading admin requests:", err);
+            setError("Error al cargar las solicitudes de administrador. Intenta de nuevo.");
+            setRequests([]);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        loadRequests();
+    }, [loadRequests]);
+
+    /**
+     * Acepta una solicitud.
+     * Realiza dos transacciones: una para cambiar el rango del usuario en `USERS`
+     * y otra para eliminar la petición en `ADMIN_REQUESTS`.
+     */
+    const handleAccept = async (req) => {
+        if (!req.userWallet) {
+            setError("La wallet del usuario no es válida.");
+            return;
+        }
+
+        setProcessingId(req.id);
+        setError(null);
+        setSuccess(null);
+        
+        try {
+                console.log("Iniciando ascenso para wallet:", req.userWallet);
+                const tx1 = await Web3Service.giveUserAdminStatus(req.userWallet);
+                if (tx1 && tx1.wait) await tx1.wait();
+                    console.log("Éxito: Usuario ascendido en la Blockchain.");
+                    try {
+                        console.log("Iniciando eliminación de la petición ID:", req.id);
+                        const tx2 = await Web3Service.removeAdminRequest(req.id);
+                        if (tx2 && tx2.wait) await tx2.wait();
+                        console.log("Éxito: Petición eliminada.");
+                        
+                        setSuccess(`Proceso completo: Usuario ascendido y petición eliminada.`);
+                        setRequests(prev => prev.filter(r => r.id !== req.id));
+                        
+                    } catch (errBorrado) {
+                        console.warn("Fallo al eliminar petición:", errBorrado);
+                        setSuccess(`Aviso: El usuario fue ascendido a Admin, pero hubo un error al borrar la petición de la lista (Revisa los permisos de tu Smart Contract).`);
+                }
+
+            } catch (errAscenso) {
+                console.error("Error en el proceso de ascenso:", errAscenso);
+                setError("Error en Blockchain al ascender: " + (errAscenso.message || "No se pudo completar el ascenso"));
+            } finally {
+                setProcessingId(null);
+        }
+    };
+
+    /**
+     * Deniega una solicitud.
+     * Simplemente elimina la petición del Smart Contract sin cambiar el rango del usuario.
+     */
+    const handleReject = async (req) => {
+        if (!window.confirm("¿Estás seguro de que quieres denegar esta solicitud?")) return;
+
+        setProcessingId(req.id);
+        setError(null);
+        setSuccess(null);
+        try {
+            await Web3Service.removeAdminRequest(req.id);
+            
+            setSuccess(`Petición denegada correctamente.`);
+            setRequests(prev => prev.filter(r => r.id !== req.id));
+        } catch (err) {
+            setError("Error al eliminar la petición: " + err.message);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+    return (
+        <Container className="py-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3 className="fw-bold mb-0">Gestión de Solicitudes</h3>
+                <Button variant="light" onClick={onDecline} className="btn-sm">← Volver al Panel</Button>
+            </div>
+            
+            {error && <Alert variant="danger">{error}</Alert>}
+            {success && <Alert variant="success">{success}</Alert>}
+            
+            <Card className="shadow border-0 rounded-4 overflow-hidden">
+                <Table hover responsive className="mb-0 align-middle">
+                    <thead className="table-light border-bottom">
+                        <tr>
+                            <th>ID</th>
+                            <th>Wallet Solicitante</th>
+                            <th>Motivo</th>
+                            <th className="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {requests.length === 0 ? (
+                            <tr><td colSpan="4" className="text-center py-4 text-muted">No hay solicitudes pendientes.</td></tr>
+                        ) : (
+                            requests.map((req, idx) => (
+                                <tr key={req.id || idx}>
+                                    <td><Badge bg="secondary">#{req.id}</Badge></td>
+                                    <td><code className="small">{req.userWallet}</code></td>
+                                    <td><small>{req.requestReason}</small></td>
+                                    <td className="text-end">
+                                        <div className="d-flex gap-2 justify-content-end">
+                                            <Button 
+                                                variant="success" 
+                                                size="sm" 
+                                                className="fw-bold" 
+                                                disabled={processingId === req.id} 
+                                                onClick={() => handleAccept(req)}
+                                            >
+                                                {processingId === req.id ? <Spinner size="sm" animation="border" /> : "Ascender"}
+                                            </Button>
+                                            <Button 
+                                                variant="outline-danger" 
+                                                size="sm" 
+                                                disabled={processingId === req.id} 
+                                                onClick={() => handleReject(req)}
+                                            >
+                                                {processingId === req.id ? <Spinner size="sm" animation="border" /> : "Declinar"}
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </Table>
+            </Card>
+        </Container>
+    );
+};
+
+export default AdminRequestList;

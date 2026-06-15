@@ -1,0 +1,232 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Row, Col, Card, Badge, Alert, ListGroup, Form, Button, Spinner } from 'react-bootstrap';
+import { Web3Service } from '../../services/web3service';
+
+const STATUS_LABELS = { 0: 'Activa', 1: 'Resuelta', 2: 'Reabierta', 3: 'Cerrada' };
+const STATUS_COLORS = { 0: 'primary', 1: 'success', 2: 'warning', 3: 'secondary' };
+
+/**
+ * Componente que muestra todas las incidencias personales dirigidas al usuario.
+ * Recupera las incidencias desde la Blockchain donde el usuario es el destinatario directo.
+ * 
+ * Incluye lógica de filtrado por rango de fechas para facilitar la auditoría.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onCancel - Callback para volver al panel principal.
+ */
+const UserIncidencesList = ({ onCancel }) => {
+    const [incidences, setIncidences] = useState([]);
+    const [filteredIncidences, setFilteredIncidences] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [processingId, setProcessingId] = useState(null);
+
+    /**
+     * Carga y descifra las incidencias personales.
+     * Utiliza la clave privada del usuario (en sesión) para recuperar la clave AES
+     * de cada incidencia y posteriormente descifrar el contenido desde IPFS.
+     */
+    const loadIncidences = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const userInc = await Web3Service.getUserIncidences();
+            const sorted = (userInc || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            setIncidences(sorted);
+            setFilteredIncidences(sorted);
+        } catch (err) {
+            console.error("Error loading incidences:", err);
+            setError("Error al cargar las incidencias. Intenta de nuevo.");
+            setIncidences([]);
+            setFilteredIncidences([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadIncidences();
+    }, [loadIncidences]);
+
+    /**
+     * Aplica el filtrado por fechas sobre la lista de incidencias cargadas en memoria.
+     * Valida que el rango sea coherente.
+     */
+    const applyFilter = () => {
+        if (!fromDate || !toDate) {
+            alert("Por favor selecciona ambas fechas.");
+            return;
+        }
+
+        if (new Date(fromDate) > new Date(toDate)) {
+            alert("La fecha de inicio no puede ser mayor que la fecha de fin.");
+            return;
+        }
+
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+
+        const filtered = incidences.filter(inc => {
+            const incDate = new Date(inc.date);
+            return incDate >= from && incDate <= to;
+        });
+
+        setFilteredIncidences(filtered);
+    };
+
+    /**
+     * Limpia los filtros y restaura la vista original de todas las incidencias.
+     */
+    const handleResolve = async (inc) => {
+        setProcessingId(inc.id);
+        try {
+            await Web3Service.updateIncidenceStatus(inc.id, 1); // Resuelta
+            const update = list => list.map(i => i.id === inc.id ? { ...i, status: 1 } : i);
+            setIncidences(prev => update(prev));
+            setFilteredIncidences(prev => update(prev));
+        } catch (err) {
+            setError(err.message || "Error al marcar como resuelta.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const resetFilter = () => {
+        setFromDate('');
+        setToDate('');
+        setFilteredIncidences(incidences);
+    };
+
+    if (isLoading) {
+        return (
+            <Container className="mt-4 text-center">
+                <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </Spinner>
+            </Container>
+        );
+    }
+
+    return (
+        <Container className="mt-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="fw-bold">Incidencias Personales</h2>
+                <Button variant="light" onClick={onCancel} className="btn-sm">
+                    ← Atrás
+                </Button>
+            </div>
+
+            {error && <Alert variant="danger">{error}</Alert>}
+
+            {/* Filtro de fechas */}
+            <Card className="mb-4 shadow border-0 rounded-4">
+                <Card.Body>
+                    <h5 className="fw-bold mb-3">Filtrar por Rango de Fechas</h5>
+                    <Row>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="fw-bold">Desde</Form.Label>
+                                <Form.Control 
+                                    type="date" 
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="fw-bold">Hasta</Form.Label>
+                                <Form.Control 
+                                    type="date" 
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4} className="d-flex gap-2 align-items-end">
+                            <Button 
+                                variant="primary" 
+                                onClick={applyFilter}
+                                className="w-100"
+                            >
+                                Filtrar
+                            </Button>
+                            <Button 
+                                variant="outline-secondary" 
+                                onClick={resetFilter}
+                                className="w-100"
+                            >
+                                Limpiar
+                            </Button>
+                        </Col>
+                    </Row>
+                </Card.Body>
+            </Card>
+
+            {/* Lista de incidencias */}
+            <div className="mb-4">
+                <Badge pill bg="primary" className="px-3 py-2">
+                    {filteredIncidences.length} Incidencias
+                </Badge>
+            </div>
+
+            {filteredIncidences.length === 0 ? (
+                <Alert variant="light" className="text-center py-5 border">
+                    <p className="text-muted mb-0">No hay incidencias personales en el rango de fechas seleccionado.</p>
+                </Alert>
+            ) : (
+                <Row>
+                    {filteredIncidences.map((inc, index) => (
+                        <Col md={6} lg={4} className="mb-4" key={index}>
+                            <Card className="h-100 shadow border-0 rounded-4 overflow-hidden">
+                                <div className="px-3 pt-3 d-flex justify-content-between align-items-center">
+                                    <Badge bg="success">#{inc.id}</Badge>
+                                    <Badge bg={STATUS_COLORS[inc.status] ?? 'secondary'}>
+                                        {STATUS_LABELS[inc.status] ?? 'Desconocido'}
+                                    </Badge>
+                                </div>
+                                <Card.Header className="bg-white border-0 pt-2 d-flex justify-content-between align-items-center">
+                                    <Badge bg={inc.priority === 2 ? 'danger' : inc.priority === 1 ? 'warning' : 'info'}>
+                                        Prioridad {inc.priority === 2 ? 'Alta' : inc.priority === 1 ? 'Media' : 'Baja'}
+                                    </Badge>
+                                    <small className="text-muted fw-bold">
+                                        {inc.date ? new Date(inc.date).toLocaleDateString() : 'N/A'}
+                                    </small>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Card.Title className="fw-bold text-dark">
+                                        {inc.title}
+                                    </Card.Title>
+                                    <Card.Text className="text-muted small">
+                                        {inc.description}
+                                    </Card.Text>
+                                    
+                                    <ListGroup variant="flush" className="small bg-light rounded-3 overflow-hidden">
+                                        <ListGroup.Item className="bg-transparent py-1">
+                                            <strong>De:</strong> <code className="text-primary">{inc.senderUserName}/{inc.senderEmail}</code>
+                                        </ListGroup.Item>
+                                        <ListGroup.Item className="bg-transparent py-1">
+                                            <strong>Para:</strong> {inc.userReceiver ? `Usuario: ${inc.userReceiver}` : inc.groupReceiver ? `Grupo: ${inc.groupReceiver}` : 'N/A'}
+                                        </ListGroup.Item>
+                                    </ListGroup>
+                                </Card.Body>
+                                {(inc.status === 0 || inc.status === 2) && (
+                                    <Card.Footer className="bg-white border-0 pb-3 pt-0">
+                                        <Button variant="outline-success" size="sm" className="w-100 fw-bold"
+                                            disabled={processingId === inc.id} onClick={() => handleResolve(inc)}>
+                                            {processingId === inc.id ? <Spinner size="sm" animation="border" /> : "Marcar como Resuelta"}
+                                        </Button>
+                                    </Card.Footer>
+                                )}
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+            )}
+        </Container>
+    );
+};
+
+export default UserIncidencesList;
