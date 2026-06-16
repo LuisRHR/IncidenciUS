@@ -41,7 +41,6 @@ const Login = ({ onConnect }) => {
                 if (userData && userData.exists) { // Verificación segura
                     if (userData.isBanned) {
                         setError("ACCESO DENEGADO: Esta cuenta ha sido bloqueada por la administración.");
-                        setIsConnecting(false);
                         return; 
                     }
                     onConnect(address, userData); 

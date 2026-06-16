@@ -64,10 +64,11 @@ function App() {
         
         if (window.ethereum && window.ethereum.selectedAddress && sessionKey) {
           const userData = await Web3Service.getActualUser(); 
-
-          if (userData.isBanned) {
+          if (userData.isBanned || !userData.exists) {
             setUser(null);
             setUserGroup(null);
+            setView('welcome');
+            sessionStorage.clear();
             return;
           }
           const groupData = await Web3Service.getActualGroup();

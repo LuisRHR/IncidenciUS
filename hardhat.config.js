@@ -5,7 +5,15 @@ const { ALCHEMY_SEPOLIA_URL, PRIVATE_KEY } = process.env;
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.28",
+  solidity: {
+    version: "0.8.28",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 250,
+      },
+    },
+  },
   networks: {
     localhost: {
       url: "http://127.0.0.1:8545",

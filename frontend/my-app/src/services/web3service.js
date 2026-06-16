@@ -322,6 +322,10 @@ export const Web3Service = {
                 email: ipfsData.email.trim()
             };
         } catch (e) {
+            // Detectar si el contrato revirtió la llamada por bloqueo
+            if (e.message?.includes("Banned") || e.reason?.includes("Banned") || e.message?.includes("bloqueado")) {
+                return { exists: true, isBanned: true };
+            }
             console.error("Error en login:", e);
             return { exists: false };
         }
@@ -435,6 +439,9 @@ export const Web3Service = {
                 email: ipfsData.email.trim()
             };
         } catch (e) {
+            if (e.message?.includes("bloqueado") || e.reason?.includes("bloqueado") || e.message?.includes("bloqueado")) {
+                return { exists: true, isBanned: true };
+            }
             console.error("Error al obtener usuario actual:", e);
             return { exists: false };
         }
