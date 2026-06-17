@@ -47,8 +47,7 @@ De manera opcional, y solo en caso de querer desplegar en la red de pruebas Sepo
 Una vez instaladas las herramientas anteriores, hay que descargar el proyecto e instalar sus dependencias. Esto se hace dos veces, ya que el proyecto de contratos y el frontend tienen sus propias dependencias por separado. Los comandos son los siguientes:
 
     git clone https://github.com/LuisRHR/IncidenciUS
-    cd https://github.com/LuisRHR/IncidenciUS
-
+    cd IncidenciUS
     npm ci
 
     cd ./frontend/my-app/
@@ -197,8 +196,7 @@ Optionally, and only if you want to deploy to the Sepolia test network instead o
 Once the tools above are installed, you download the project and install its dependencies. This is done twice, since the contract project and the frontend have their own separate dependencies. The commands are:
 
     git clone https://github.com/LuisRHR/IncidenciUS
-    cd https://github.com/LuisRHR/IncidenciUS
-
+    cd IncidenciUS
     npm ci
 
     cd ./frontend/my-app/
